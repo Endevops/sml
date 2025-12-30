@@ -25,3 +25,14 @@ The project is configured to use the test zone from peppol, `acc.edelivery.tech.
 - POST `/manage-business-identifier`: SOAP endpoint to manage the identifiers
 
 > This is the URL suffix to put in `Manage participants`
+
+## Configuration
+
+There is multiple environment variable that can be set to configure the service:
+- `SML_DNS_SERVER`: The dns server to use to perform the update (default: `127.0.0.1`)
+- `SML_DNS_PORT`: The dns server port (default: `53`)
+- `SML_DNS_ZONE`: The dns zone to use (default: `acc.edelivery.tech.ec.europa.eu`)
+- `SML_DNS_TTL`: The ttl to use for the dns records (default: `3600`)
+- `SML_DNS_KEY_NAME`: The dns key name to use for the update (default: `default`)
+- `SML_DNS_KEY_SECRET`: The dns key secret to use for the update (default: `default`)
+- `SML_SERVICE_PORT`: The port the service will listen to (default: `8080`)
