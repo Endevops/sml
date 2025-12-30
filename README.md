@@ -1,45 +1,27 @@
-# sml-develop
+# sml
 
-This project was created using the [Ktor Project Generator](https://start.ktor.io).
+This repo contains a small poc for an equivalent of the [peppol-sml](https://docs.peppol.eu/edelivery/).
+> Sorry, the doc from peppol doesn't have any reference other than pdf files that may disapears
 
-Here are some useful links to get you started:
+## Why ?
 
-- [Ktor Documentation](https://ktor.io/docs/home.html)
-- [Ktor GitHub page](https://github.com/ktorio/ktor)
-- The [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9). You'll need
-  to [request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up) to join.
+When testing an environment, I do really like to have the full control on everything possible, including the SML.
+While looking for any implementation online, I wasn't able to find any, or they were too complicated to setup/relies on components that must be deployed on the own host.
 
-## Features
+So I came with this solution, a lightweight [ktor](https://ktor.io/) service, that will be sided with a [bind9](https://www.isc.org/bind/) service to perform dns update.
 
-Here's a list of features included in this project:
+The project is configured to use the test zone from peppol, `acc.edelivery.tech.ec.europa.eu`.
 
-| Name                                                                   | Description                                                                        |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| [AutoHeadResponse](https://start.ktor.io/p/auto-head-response)         | Provides automatic responses for HEAD requests                                     |
-| [Routing](https://start.ktor.io/p/routing)                             | Provides a structured routing DSL                                                  |
-| [Call Logging](https://start.ktor.io/p/call-logging)                   | Logs client requests                                                               |
-| [Content Negotiation](https://start.ktor.io/p/content-negotiation)     | Provides automatic content conversion according to Content-Type and Accept headers |
-| [kotlinx.serialization](https://start.ktor.io/p/kotlinx-serialization) | Handles JSON serialization using kotlinx.serialization library                     |
-| [Exposed](https://start.ktor.io/p/exposed)                             | Adds Exposed database to your application                                          |
+> [!CAUTION]
+> It has been mostly tested with [phoss-smp](https://github.com/phax/phoss-smp), and is really not **Production ready**. I didn't care to have a good error handling nor everything that is mendatory for a production service.
 
-## Building & Running
+## Routes
 
-To build or run the project, use one of the following tasks:
+- GET `/`: Basic page to display what is stored inside the SML.
+- POST `/manage-service-metadata`: SOAP endpoint to manage the service registration
 
-| Task                                    | Description                                                          |
-|-----------------------------------------|----------------------------------------------------------------------|
-| `./gradlew test`                        | Run the tests                                                        |
-| `./gradlew build`                       | Build everything                                                     |
-| `./gradlew buildFatJar`                 | Build an executable JAR of the server with all dependencies included |
-| `./gradlew buildImage`                  | Build the docker image to use with the fat JAR                       |
-| `./gradlew publishImageToLocalRegistry` | Publish the docker image locally                                     |
-| `./gradlew run`                         | Run the server                                                       |
-| `./gradlew runDocker`                   | Run using the local docker image                                     |
+> This is the URL suffix to put in `Manage SMPs`
 
-If the server starts successfully, you'll see the following output:
+- POST `/manage-business-identifier`: SOAP endpoint to manage the identifiers
 
-```
-2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
-2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
-```
-
+> This is the URL suffix to put in `Manage participants`
