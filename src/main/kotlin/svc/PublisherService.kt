@@ -1,15 +1,15 @@
-package be.endevops
+package be.endevops.svc
 
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 
-// Lightweight domain model for service metadata publisher
-data class ServiceMetadataPublisher(
-    val publisherId: String,
-    val logicalAddress: String,
-    val physicalAddress: String,
-)
 
 class PublisherService(
     private val database: Database,
@@ -28,6 +28,13 @@ class PublisherService(
             SchemaUtils.create(Publishers)
         }
     }
+
+    // Lightweight domain model for service metadata publisher
+    data class ServiceMetadataPublisher(
+        val publisherId: String,
+        val logicalAddress: String,
+        val physicalAddress: String,
+    )
 
     fun create(p: ServiceMetadataPublisher): Int {
         return transaction(database) {
@@ -48,7 +55,7 @@ class PublisherService(
         }
     }
 
-    fun readByPublisherId(publisherIdStr: String): ServiceMetadataPublisher? =
+    fun get(publisherIdStr: String): ServiceMetadataPublisher? =
         transaction(database) {
             Publishers
                 .selectAll()
@@ -60,6 +67,17 @@ class PublisherService(
                         physicalAddress = it[Publishers.physicalAddress],
                     )
                 }.singleOrNull()
+        }
+
+    /**
+     * Check if a publisher with the given publisherId exists in the database.
+     */
+    fun exists(publisherId: String): Boolean =
+        transaction(database) {
+            Publishers
+                .selectAll()
+                .where { Publishers.publisherId eq publisherId }
+                .count() > 0
         }
 
     fun update(p: ServiceMetadataPublisher): Boolean =

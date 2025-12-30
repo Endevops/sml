@@ -1,0 +1,5 @@
+dns:
+  server: ${DNS_SERVER:127.0.0.1}
+  port: ${DNS_PORT:53}
+  keyname: ${DNS_KEY_NAME:default}
+  keysecret: ${DNS_KEY_SECRET:default}

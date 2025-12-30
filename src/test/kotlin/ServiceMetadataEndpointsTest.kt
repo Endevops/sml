@@ -31,7 +31,7 @@ class ServiceMetadataEndpointsTest {
                 """.trimIndent()
 
             val response =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(soapRequest)
                 }
@@ -67,7 +67,7 @@ class ServiceMetadataEndpointsTest {
                 """.trimIndent()
 
             val r1 =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(soapRequest)
                 }
@@ -76,7 +76,7 @@ class ServiceMetadataEndpointsTest {
             val id1 = Regex("<DatabaseId>(\\d+)</DatabaseId>").find(b1)!!.groupValues[1]
 
             val r2 =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(soapRequest)
                 }
@@ -104,7 +104,7 @@ class ServiceMetadataEndpointsTest {
                 """.trimIndent()
 
             val response =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(soapRequest)
                 }
@@ -126,13 +126,17 @@ class ServiceMetadataEndpointsTest {
                   <soap:Body>
                     <ns:UpdateServiceMetadataPublisherService>
                       <ns:ServiceMetadataPublisherID>test-pub-update</ns:ServiceMetadataPublisherID>
+                      <ns:PublisherEndpoint>
+                        <ns:LogicalAddress>http://persistence.test/logical</ns:LogicalAddress>
+                        <ns:PhysicalAddress>Persistence Publisher</ns:PhysicalAddress>
+                      </ns:PublisherEndpoint>
                     </ns:UpdateServiceMetadataPublisherService>
                   </soap:Body>
                 </soap:Envelope>
                 """.trimIndent()
 
             val response =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(soapRequest)
                 }
@@ -160,7 +164,7 @@ class ServiceMetadataEndpointsTest {
                 """.trimIndent()
 
             val response =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(soapRequest)
                 }
@@ -192,7 +196,7 @@ class ServiceMetadataEndpointsTest {
                 """.trimIndent()
 
             val r1 =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(create)
                 }
@@ -211,7 +215,7 @@ class ServiceMetadataEndpointsTest {
                 """.trimIndent()
 
             val rr =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(read)
                 }
@@ -252,7 +256,7 @@ class ServiceMetadataEndpointsTest {
                 </soap:Envelope>
                 """.trimIndent()
 
-            client.post("/sml/manage-service-metadata") {
+            client.post("/manage-service-metadata") {
                 contentType(ContentType.Text.Xml)
                 setBody(create)
             }
@@ -274,7 +278,7 @@ class ServiceMetadataEndpointsTest {
                 """.trimIndent()
 
             val up =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(update)
                 }
@@ -293,7 +297,7 @@ class ServiceMetadataEndpointsTest {
                 """.trimIndent()
 
             val rr =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(read)
                 }

@@ -1,10 +1,9 @@
 package be.endevops
 
+import be.endevops.svc.*
 import io.ktor.server.application.*
-import io.ktor.server.config.*
 import io.ktor.server.plugins.di.*
 import org.jetbrains.exposed.sql.Database
-import org.slf4j.LoggerFactory
 import kotlin.io.path.createTempFile
 import kotlin.io.path.deleteExisting
 
@@ -21,9 +20,7 @@ fun Application.module() {
     val dbFile = environment.config.property("dbfile").getString()
     log.debug("Database url: {}", dbFile)
     dependencies.provide {
-        val db = Database.connect("jdbc:sqlite:$dbFile", "org.sqlite.JDBC")
-        LoggerFactory.getLogger(ParticipantService::class.java)
-        db
+        Database.connect("jdbc:sqlite:$dbFile", "org.sqlite.JDBC")
     }
 
     configureServices()
@@ -39,21 +36,20 @@ fun Application.testModule() {
     temp.deleteExisting()
 
     dependencies.provide {
-        val db = Database.connect("jdbc:sqlite:$temp", "org.sqlite.JDBC")
-        LoggerFactory.getLogger(ParticipantService::class.java)
-        db
+        Database.connect("jdbc:sqlite:$temp", "org.sqlite.JDBC")
     }
 
-    dependencies.provide {
-        environment.config.property("dns").getAs<DnsConfiguration>()
-    }
     configureServices()
 }
 
 fun Application.configureServices() {
     dependencies {
+        provide(DnsConfiguration::class)
         provide(PublisherService::class)
         provide(DnsClient::class)
+        provide(MigrationService::class)
         provide(ParticipantService::class)
+        provide(ManageBusinessIdentifier::class)
+        provide(ManageServiceMetadata::class)
     }
 }

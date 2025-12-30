@@ -47,9 +47,8 @@ dependencies {
     implementation("io.ktor:ktor-server-di")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("dnsjava:dnsjava:3.6.3")
-    // Jackson XML support for XML -> tree model parsing
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.18.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1")
+    implementation("tools.jackson.dataformat:jackson-dataformat-xml:3.0.3")
+    implementation("tools.jackson.module:jackson-module-kotlin:3.0.3")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

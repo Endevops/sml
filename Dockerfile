@@ -21,7 +21,8 @@ COPY src/ ./src/
 RUN --mount=type=cache,target=/home/gradle/.gradle \
     --mount=type=cache,target=/root/.gradle \
     chmod +x ./gradlew && \
-    ./gradlew --no-daemon buildFatJar -x test
+    ./gradlew --no-daemon buildFatJar -x test && \
+    mkdir -p data
 
 # --------------------
 # Runtime: small, secure image
@@ -40,10 +41,10 @@ LABEL org.opencontainers.image.title="sml-develop" \
       org.opencontainers.image.vendor="Endevops"
 
 WORKDIR /app
-
 # Copy the fat jar from the builder stage. Set ownership to distroless nonroot (65532)
 # Note: --chown requires BuildKit (Docker Buildx uses BuildKit by default)
 COPY --from=builder --chown=65532:65532 /home/gradle/project/build/libs/*.jar /app/app.jar
+COPY --from=builder --chown=65532:65532 /home/gradle/project/data/ /app/data/
 
 EXPOSE 8080
 

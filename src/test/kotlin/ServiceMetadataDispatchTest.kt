@@ -31,7 +31,7 @@ class ServiceMetadataDispatchTest {
                 """.trimIndent()
 
             val response =
-                client.post("/sml/manage-service-metadata") {
+                client.post("/manage-service-metadata") {
                     contentType(ContentType.Text.Xml)
                     setBody(soapRequest)
                 }
