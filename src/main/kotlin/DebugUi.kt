@@ -7,9 +7,9 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.plugins.di.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.html.*
+import org.intellij.lang.annotations.Language
 
 fun Application.configureDebugUi() {
     routing {
@@ -21,12 +21,80 @@ fun Application.configureDebugUi() {
             val publishers = publisherService.listAll()
             val participants = participantService.listAll()
             val migrations = migrationService.listAll()
+            @Language("css")
+            val style = """:root {
+    color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark light;
+    }
+}
+
+body {
+    font-family: sans-serif;
+    padding: 24px;
+    background: light-dark(#f4f6f8, #1e1e1e);
+    color: light-dark(#222, #ddd);
+}
+
+.content {
+    max-width: 1100px;
+    margin: 0 auto
+}
+
+h1 {
+    margin-bottom: 12px
+}
+
+h2 {
+    margin: 20px 0 8px 0;
+    font-size: 1.1rem
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1.25rem;
+    background: light-dark(#fff, #2b2b2b);
+}
+
+th, td {
+    border: 1px solid light-dark(#e6edf3, #3c3c3c);
+    padding: 10px;
+    text-align: left;
+    vertical-align: top;
+    font-size: 13px
+}
+
+th {
+    background: light-dark(#f1f5f9, #313131);
+    font-weight: 600
+}
+
+tbody tr:nth-child(odd) {
+    background: light-dark(#fcfdff, #262626);
+}
+
+code {
+    font-family: monospace;
+    font-size: 12px;
+    background: light-dark(#f8fafc, #2d2d2d);
+    padding: 2px 4px;
+    border-radius: 4px
+}
+
+.table-wrap {
+    overflow-x: auto;
+    border-radius: 6px
+}"""
 
             call.respondHtml(HttpStatusCode.OK) {
                 head {
                     title { +"SML Debug UI" }
                     style {
-                        +"body { font-family: Arial, Helvetica, sans-serif; padding: 24px; background: #f4f6f8; color: #222 } .content { max-width: 1100px; margin: 0 auto } h1 { margin-bottom: 12px } h2 { margin: 20px 0 8px 0; font-size: 1.1rem } table { border-collapse: collapse; width: 100%; margin-bottom: 1.25rem; background: #fff } th, td { border: 1px solid #e6edf3; padding: 10px; text-align: left; vertical-align: top; font-size: 13px } th { background: #f1f5f9; font-weight: 600 } tbody tr:nth-child(odd) { background: #fcfdff } code { font-family: monospace; font-size: 12px; background: #f8fafc; padding: 2px 4px; border-radius: 4px } .table-wrap { overflow-x: auto; border-radius: 6px }"
+                        +style
                     }
                 }
                 body {
@@ -94,7 +162,6 @@ fun Application.configureDebugUi() {
                                         tr {
                                             td { +m.key }
                                             td { +m.fromPublisher }
-                                            td { +m.toPublisher }
                                             td { +m.scheme }
                                             td { code { +m.identifier } }
                                         }

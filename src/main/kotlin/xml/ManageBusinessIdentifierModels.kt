@@ -46,9 +46,10 @@ data class PrepareMigrationRecordRequestPojo(
     @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID") val serviceMetadataPublisherID: String,
     @param:JacksonXmlProperty(localName = "ParticipantIdentifier") val participantIdentifier: ParticipantIdentifierPojo,
     @param:JacksonXmlProperty(localName = "MigrationKey") val migrationKey: String,
-    @param:JacksonXmlProperty(localName = "ToServiceMetadataPublisherID") val toServiceMetadataPublisherID: String,
 )
 
 data class CompleteMigrationRecordRequestPojo(
     @param:JacksonXmlProperty(localName = "MigrationKey") val migrationKey: String,
+    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID") val serviceMetadataPublisherID: String,
+    @param:JacksonXmlProperty(localName = "ParticipantIdentifier") val participantIdentifier: ParticipantIdentifierPojo,
 )
