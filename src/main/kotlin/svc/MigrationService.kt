@@ -5,7 +5,9 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
-class MigrationService(private val database: Database) {
+class MigrationService(
+    private val database: Database,
+) {
     object Migrations : Table() {
         val key = varchar("key", 200)
         val fromPublisher = varchar("from_publisher", 200)
@@ -30,34 +32,52 @@ class MigrationService(private val database: Database) {
         val identifier: String,
     )
 
-    fun create(r: MigrationRecord) = transaction(database) {
-        Migrations.insert {
-            it[key] = r.key
-            it[fromPublisher] = r.fromPublisher
-            it[toPublisher] = r.toPublisher
-            it[scheme] = r.scheme
-            it[identifier] = r.identifier
-        }[Migrations.key]
-    }
-
-    fun get(key: String) = transaction(database) {
-        Migrations.selectAll().where {
-            Migrations.key eq key
-        }.singleOrNull()?.let {
-            MigrationRecord(
-                key = it[Migrations.key],
-                fromPublisher = it[Migrations.fromPublisher],
-                toPublisher = it[Migrations.toPublisher],
-                scheme = it[Migrations.scheme],
-                identifier = it[Migrations.identifier],
-            )
+    fun create(r: MigrationRecord) =
+        transaction(database) {
+            Migrations.insert {
+                it[key] = r.key
+                it[fromPublisher] = r.fromPublisher
+                it[toPublisher] = r.toPublisher
+                it[scheme] = r.scheme
+                it[identifier] = r.identifier
+            }[Migrations.key]
         }
-    }
 
-    fun delete(key: String) = transaction(database) {
-        Migrations.deleteWhere {
-            Migrations.key eq key
+    fun get(key: String) =
+        transaction(database) {
+            Migrations
+                .selectAll()
+                .where {
+                    Migrations.key eq key
+                }.singleOrNull()
+                ?.let {
+                    MigrationRecord(
+                        key = it[Migrations.key],
+                        fromPublisher = it[Migrations.fromPublisher],
+                        toPublisher = it[Migrations.toPublisher],
+                        scheme = it[Migrations.scheme],
+                        identifier = it[Migrations.identifier],
+                    )
+                }
         }
-    }
+
+    fun delete(key: String) =
+        transaction(database) {
+            Migrations.deleteWhere {
+                Migrations.key eq key
+            }
+        }
+
+    fun listAll(): List<MigrationRecord> =
+        transaction(database) {
+            Migrations.selectAll().map {
+                MigrationRecord(
+                    key = it[Migrations.key],
+                    fromPublisher = it[Migrations.fromPublisher],
+                    toPublisher = it[Migrations.toPublisher],
+                    scheme = it[Migrations.scheme],
+                    identifier = it[Migrations.identifier],
+                )
+            }
+        }
 }
-

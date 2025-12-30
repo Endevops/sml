@@ -10,7 +10,6 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-
 class PublisherService(
     private val database: Database,
 ) {
@@ -94,5 +93,16 @@ class PublisherService(
         transaction(database) {
             val deleted = Publishers.deleteWhere { Publishers.publisherId eq publisherIdStr }
             deleted > 0
+        }
+
+    fun listAll(): List<ServiceMetadataPublisher> =
+        transaction(database) {
+            Publishers.selectAll().map {
+                ServiceMetadataPublisher(
+                    publisherId = it[Publishers.publisherId],
+                    logicalAddress = it[Publishers.logicalAddress],
+                    physicalAddress = it[Publishers.physicalAddress],
+                )
+            }
         }
 }

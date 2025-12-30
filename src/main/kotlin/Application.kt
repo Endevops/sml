@@ -12,12 +12,12 @@ fun main(args: Array<String>) =
     io.ktor.server.netty.EngineMain
         .main(args)
 
-
 fun Application.configureApplication() {
     configureMonitoring()
     install(AutoHeadResponse)
     configureBusinessIdentifier()
     configureManageServiceMetadata()
+    configureDebugUi()
 }
 
 fun Application.module() {
@@ -56,4 +56,3 @@ fun Application.configureServices() {
         provide(ManageServiceMetadata::class)
     }
 }
-

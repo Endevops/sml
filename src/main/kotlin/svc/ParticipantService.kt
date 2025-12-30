@@ -75,4 +75,15 @@ class ParticipantService(
                     )
                 }
         }
+
+    fun listAll(): List<ParticipantIdentifier> =
+        transaction(database) {
+            Participants.selectAll().map {
+                ParticipantIdentifier(
+                    publisherId = it[Participants.publisherId],
+                    scheme = it[Participants.scheme],
+                    identifier = it[Participants.identifier],
+                )
+            }
+        }
 }
