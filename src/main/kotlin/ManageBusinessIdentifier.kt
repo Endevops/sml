@@ -5,6 +5,7 @@ import be.endevops.xml.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
+import io.ktor.server.plugins.di.annotations.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -36,11 +37,11 @@ fun Application.configureBusinessIdentifier() {
 
             call.respondText(
                 responseXml.map {
-                wrapInSoapEnvelope(it)
-            }.getOrElse {
-                log.error("Error processing request:", it)
-                wrapInSoapEnvelope(it.message ?: "unknown error")
-            },
+                    wrapInSoapEnvelope(it)
+                }.getOrElse {
+                    log.error("Error processing request:", it)
+                    wrapInSoapEnvelope(it.message ?: "unknown error")
+                },
                 ContentType.Text.Xml.withCharset(Charsets.UTF_8),
                 if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest
             )
@@ -104,12 +105,14 @@ class ManageBusinessIdentifier(
     val participantService: ParticipantService,
     val dnsClient: DnsClient,
     val publisherService: PublisherService,
-    val migrationService: MigrationService
+    val migrationService: MigrationService,
+    @Property("dns.zone") val zone: String,
+    @Property("dns.domain") val domain: String
 ) {
     private val log = LoggerFactory.getLogger(ManageBusinessIdentifier::class.java)!!
     private val xmlMapper: XmlMapper = XmlMapper.builder().nameForTextElement("text").findAndAddModules().build()
 
-    fun listParticipants(requestXml: String): Result<String> = runCatching {
+    fun listParticipants(requestXml: String) = runCatching {
         log.trace("listParticipants entry, preview={}", requestXml)
         val opElement = firstElementInSoapBody(requestXml)
             ?: throw FaultError("<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>").also {
@@ -192,8 +195,8 @@ class ManageBusinessIdentifier(
 
         log.debug("Creating dns records")
         dnsClient.addNaptrRecord(
-            "europa.eu",
-            "${identifier}.${scheme}.acc.edelivery.tech.ec",
+            zone,
+            "${identifier}.${scheme}.${domain}",
             30,
             20,
             10,
@@ -203,8 +206,8 @@ class ManageBusinessIdentifier(
             "."
         )
         dnsClient.addCNameRecord(
-            "europa.eu",
-            "B-${cnameIdentifier}.${scheme}.acc.edelivery.tech.ec",
+            zone,
+            "B-${cnameIdentifier}.${scheme}.${domain}",
             30,
             serviceMetadataPublisher.logicalAddress
         )
@@ -217,8 +220,8 @@ class ManageBusinessIdentifier(
         val cnameId = cnameIdentifierEncode(identifier)
 
         log.debug("Deleting dns records")
-        dnsClient.deleteNaptrRecord("europa.eu", "${naptrId}.${scheme}.acc.edelivery.tech.ec")
-        dnsClient.deleteCNameRecord("europa.eu", "B-${cnameId}.${scheme}.acc.edelivery.tech.ec")
+        dnsClient.deleteNaptrRecord(zone, "${naptrId}.${scheme}.${domain}")
+        dnsClient.deleteCNameRecord(zone, "B-${cnameId}.${scheme}.${domain}")
     }
 
     fun deleteParticipant(requestXml: String) = runCatching {
@@ -372,8 +375,8 @@ class ManageBusinessIdentifier(
 
         log.debug("Updating dns records")
         dnsClient.updateNaptrRecord(
-            "europa.eu",
-            "${identifier}.${scheme}.acc.edelivery.tech.ec",
+            zone,
+            "${identifier}.${scheme}.${domain}",
             30,
             20,
             10,
@@ -383,8 +386,8 @@ class ManageBusinessIdentifier(
             "."
         )
         dnsClient.updateCNameRecord(
-            "europa.eu",
-            "B-${cnameIdentifier}.${scheme}.acc.edelivery.tech.ec",
+            zone,
+            "B-${cnameIdentifier}.${scheme}.${domain}",
             30,
             serviceMetadataPublisher.logicalAddress
         )

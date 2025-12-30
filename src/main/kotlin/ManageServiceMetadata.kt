@@ -150,7 +150,10 @@ class ManageServiceMetadata(val publisherService: PublisherService) {
         log.info("handleRead: reading serviceMetadataPublisherID='{}'", readPojo.serviceMetadataPublisherID)
         val found = publisherService.get(readPojo.serviceMetadataPublisherID) ?: throw FaultError(
             xmlMapper.writeValueAsString(
-                ReadServiceMetadataPublisherServiceResponsePojo(result = "OK")
+                ReadServiceMetadataPublisherServiceResponsePojo(
+                    result = "NOT_FOUND",
+                    faultMessage = "Publisher not found"
+                )
             )
         )
 

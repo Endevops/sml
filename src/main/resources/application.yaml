@@ -8,6 +8,8 @@ ktor:
 
 dbfile: ${DB_FILE:./data/database.db}
 dns:
+  zone: ${DNS_ZONE:europa.eu}
+  domain: ${DNS_DOMAIN:acc.edelivery.tech.ec.europa.eu}
   server: ${DNS_SERVER:127.0.0.1}
   port: ${DNS_PORT:53}
   keyname: ${DNS_KEY_NAME:default}
