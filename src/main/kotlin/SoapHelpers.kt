@@ -5,6 +5,8 @@ import org.xml.sax.InputSource
 import java.io.StringReader
 import javax.xml.parsers.DocumentBuilderFactory
 
+class FaultError(message: String) : Throwable(message)
+
 fun firstElementInSoapBody(xml: String): Element? {
     return runCatching {
         val dbf = DocumentBuilderFactory.newInstance()

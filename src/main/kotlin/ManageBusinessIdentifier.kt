@@ -1,10 +1,6 @@
 package be.endevops
 
-import be.endevops.svc.DnsClient
-import be.endevops.svc.MigrationService
-import be.endevops.svc.ParticipantIdentifier
-import be.endevops.svc.ParticipantService
-import be.endevops.svc.PublisherService
+import be.endevops.svc.*
 import be.endevops.xml.*
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -37,7 +33,16 @@ fun Application.configureBusinessIdentifier() {
             val raw = call.receiveText()
             val soapAction = call.request.header("SOAPAction")
             val responseXml = dispatchManageBusinessIdentifier(raw, soapAction)
-            call.respondText(responseXml, ContentType.Text.Xml.withCharset(Charsets.UTF_8), HttpStatusCode.OK)
+
+            call.respondText(
+                responseXml.map {
+                    wrapInSoapEnvelope(it)
+                }.getOrElse {
+                    wrapInSoapEnvelope(it.message!!)
+                },
+                ContentType.Text.Xml.withCharset(Charsets.UTF_8),
+                if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest
+            )
         }
     }
 }
@@ -45,7 +50,7 @@ fun Application.configureBusinessIdentifier() {
 fun Application.dispatchManageBusinessIdentifier(
     requestXml: String,
     soapActionHeader: String?,
-): String {
+): Result<String> {
     log.trace(
         "dispatchManageBusinessIdentifier called: soapAction='{}' requestLength={}",
         soapActionHeader,
@@ -88,11 +93,11 @@ fun Application.dispatchManageBusinessIdentifier(
 
             else -> {
                 log.warn("Unknown operation='{}'", operation)
-                "<Fault><FaultMessage>Unsupported operation: ${operation ?: "Unknown"}</FaultMessage></Fault>"
+                Result.failure(FaultError("<BadRequestFault><FaultMessage>Unknown operation: $operation</FaultMessage></BadRequestFault>"))
             }
         }
 
-    return wrapInSoapEnvelope(inner)
+    return inner
 }
 
 class ManageBusinessIdentifier(
@@ -104,34 +109,33 @@ class ManageBusinessIdentifier(
     private val log = LoggerFactory.getLogger(ManageBusinessIdentifier::class.java)!!
     private val xmlMapper: XmlMapper = XmlMapper.builder().nameForTextElement("text").findAndAddModules().build()
 
-    fun listParticipants(requestXml: String): String {
+    fun listParticipants(requestXml: String): Result<String> = runCatching {
         log.trace("listParticipants entry, preview={}", requestXml)
         val opElement =
             firstElementInSoapBody(requestXml)
-                ?: return "<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>"
+                ?: throw FaultError("<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>")
         val opXml = nodeToString(opElement)
         val req = xmlMapper.readValue<PageRequestPojo>(opXml)
 
         log.info("Listing participant identifiers for publisher {}", req.serviceMetadataPublisherID)
-        val results = participantService.listByPublisher(req.serviceMetadataPublisherID).map {
+
+        xmlMapper.writeValueAsString(participantService.listByPublisher(req.serviceMetadataPublisherID).map {
             ParticipantIdentifierPojo(it.scheme, it.identifier)
         }.let {
             PageResponsePojo(it)
-        }
-
-        return xmlMapper.writeValueAsString(results)
+        })
     }
 
 
-    fun createParticipant(requestXml: String): String {
+    fun createParticipant(requestXml: String) = runCatching {
         log.trace("handleCreate entry, preview={}", requestXml)
         val opElement = firstElementInSoapBody(requestXml)
-            ?: return "<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>"
+            ?: throw FaultError("<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>")
         val opXml = nodeToString(opElement)
         val req = xmlMapper.readValue<CreateParticipantIdentifierRequestPojo>(opXml)
 
         val smp = publisherService.get(req.serviceMetadataPublisherID)
-            ?: return "<BadRequestFault><FaultMessage>Unknown ServiceMetadataPublisherID: ${req.serviceMetadataPublisherID}</FaultMessage></BadRequestFault>"
+            ?: throw FaultError("<BadRequestFault><FaultMessage>Unknown ServiceMetadataPublisherID: ${req.serviceMetadataPublisherID}</FaultMessage></BadRequestFault>")
 
         log.info(
             "Creating participant identifier for publisher {}: {}:{}",
@@ -149,31 +153,28 @@ class ManageBusinessIdentifier(
             )
         )
         log.trace("handleCreate createdId={}", dbId)
-        return "<Result>OK</Result><DatabaseId>$dbId</DatabaseId>"
+        "<Result>OK</Result><DatabaseId>$dbId</DatabaseId>"
     }
 
-    fun createListParticipants(requestXml: String): String {
+    fun createListParticipants(requestXml: String) = runCatching {
         log.trace("createListParticipants entry, preview={}", requestXml)
         val opElement = firstElementInSoapBody(requestXml)
-            ?: return "<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>"
+            ?: throw FaultError("<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>")
         val opXml = nodeToString(opElement)
         val req = xmlMapper.readValue<CreateListRequestPojo>(opXml)
 
-        val items = mutableListOf<ParticipantIdentifier>()
         val smp = publisherService.get(req.serviceMetadataPublisherID)
-            ?: return "<BadRequestFault><FaultMessage>Unknown ServiceMetadataPublisherID: ${req.serviceMetadataPublisherID}</FaultMessage></BadRequestFault>"
+            ?: throw FaultError("<BadRequestFault><FaultMessage>Unknown ServiceMetadataPublisherID: ${req.serviceMetadataPublisherID}</FaultMessage></BadRequestFault>")
         log.info("Creating participant identifiers for publisher {}", req.serviceMetadataPublisherID)
-        val pidArray = req.participantIdentifier
-        for (elem in pidArray) {
+        if (req.participantIdentifier.isEmpty()) throw FaultError("<BadRequestFault><FaultMessage>No items to create</FaultMessage></BadRequestFault>")
+        for (elem in req.participantIdentifier) {
             val scheme = elem.scheme
             val identifier = elem.identifier
             createParticipantDns(smp, elem.scheme, elem.identifier)
-            items.add(ParticipantIdentifier(req.serviceMetadataPublisherID, scheme, identifier))
+            participantService.create(ParticipantIdentifier(req.serviceMetadataPublisherID, scheme, identifier))
         }
 
-        if (items.isEmpty()) return "<BadRequestFault><FaultMessage>No items to create</FaultMessage></BadRequestFault>"
-        for (it in items) participantService.create(it)
-        return "<Result>OK</Result><Created>${items.size}</Created>"
+        "<Result>OK</Result><Created>0</Created>"
     }
 
     private fun createParticipantDns(
@@ -187,18 +188,18 @@ class ManageBusinessIdentifier(
         log.debug("Creating dns records")
         dnsClient.addNaptrRecord(
             "europa.eu",
-            "${identifier}.${scheme}.acc.edelivery.tech.ac",
+            "${identifier}.${scheme}.acc.edelivery.tech.ec",
             30,
             20,
             10,
             "U",
             "Meta:SMP",
-            "!^.*$!${serviceMetadataPublisher.logicalAddress}",
+            "!^.*$!${serviceMetadataPublisher.logicalAddress}!",
             "."
         )
         dnsClient.addCNameRecord(
             "europa.eu",
-            "B-${cnameIdentifier}.${scheme}.acc.edelivery.tech.ac",
+            "B-${cnameIdentifier}.${scheme}.acc.edelivery.tech.ec",
             30,
             serviceMetadataPublisher.logicalAddress
         )
@@ -212,19 +213,19 @@ class ManageBusinessIdentifier(
         val cnameId = cnameIdentifierEncode(identifier)
 
         log.debug("Deleting dns records")
-        dnsClient.deleteNaptrRecord("europa.eu", "${naptrId}.${scheme}.acc.edelivery.tech.ac")
-        dnsClient.deleteCNameRecord("europa.eu", "B-${cnameId}.${scheme}.acc.edelivery.tech.ac")
+        dnsClient.deleteNaptrRecord("europa.eu", "${naptrId}.${scheme}.acc.edelivery.tech.ec")
+        dnsClient.deleteCNameRecord("europa.eu", "B-${cnameId}.${scheme}.acc.edelivery.tech.ec")
     }
 
-    fun deleteParticipant(requestXml: String): String {
+    fun deleteParticipant(requestXml: String) = runCatching {
         log.trace("handleDelete entry, preview={}", requestXml)
         val opElement =
             firstElementInSoapBody(requestXml)
-                ?: return "<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>"
+                ?: throw FaultError("<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>")
         val opXml = nodeToString(opElement)
         val req = xmlMapper.readValue<DeleteParticipantIdentifierRequestPojo>(opXml)
 
-        if (!publisherService.exists(req.serviceMetadataPublisherID)) return "<BadRequestFault><FaultMessage>Unknown ServiceMetadataPublisherID: ${req.serviceMetadataPublisherID}</FaultMessage></BadRequestFault>"
+        if (!publisherService.exists(req.serviceMetadataPublisherID)) throw (FaultError("<BadRequestFault><FaultMessage>Unknown ServiceMetadataPublisherID: ${req.serviceMetadataPublisherID}</FaultMessage></BadRequestFault>"))
         log.info(
             "Deleting participant identifier for publisher {}: {}:{}",
             req.serviceMetadataPublisherID,
@@ -237,17 +238,17 @@ class ManageBusinessIdentifier(
             req.participantIdentifier.identifier
         )
         log.trace("handleDelete deleted={}", deleted)
-        return "<Result>OK</Result>"
+        "<Result>OK</Result>"
     }
 
-    fun deleteParticipantList(requestXml: String): String {
+    fun deleteParticipantList(requestXml: String) = runCatching {
         log.trace("deleteParticipantList entry, preview={}", requestXml)
         val opElement =
             firstElementInSoapBody(requestXml)
-                ?: return "<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>"
+                ?: throw FaultError("<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>")
         val opXml = nodeToString(opElement)
         val req = xmlMapper.readValue<DeleteListRequestPojo>(opXml)
-        if (!publisherService.exists(req.serviceMetadataPublisherID)) return "<BadRequestFault><FaultMessage>Unknown ServiceMetadataPublisherID: ${req.serviceMetadataPublisherID}</FaultMessage></BadRequestFault>"
+        if (!publisherService.exists(req.serviceMetadataPublisherID)) throw FaultError("<BadRequestFault><FaultMessage>Unknown ServiceMetadataPublisherID: ${req.serviceMetadataPublisherID}</FaultMessage></BadRequestFault>")
 
         var deletedCount = 0
         for (elem in req.participantIdentifier) {
@@ -265,14 +266,14 @@ class ManageBusinessIdentifier(
             }
         }
 
-        return "<Result>OK</Result><Deleted>$deletedCount</Deleted>"
+        "<Result>OK</Result><Deleted>$deletedCount</Deleted>"
     }
 
-    fun prepareToMigrate(requestXml: String): String {
+    fun prepareToMigrate(requestXml: String) = runCatching {
         log.trace("prepareToMigrate entry, preview={}", requestXml)
         val opElement =
             firstElementInSoapBody(requestXml)
-                ?: return "<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>"
+                ?: throw FaultError("<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>")
         val opXml = nodeToString(opElement)
         val req = xmlMapper.readValue<PrepareMigrationRecordRequestPojo>(opXml)
 
@@ -293,21 +294,22 @@ class ManageBusinessIdentifier(
             )
         )
 
-        return "<Result>OK</Result><MigrationKey>${key}</MigrationKey>"
+        "<Result>OK</Result><MigrationKey>${key}</MigrationKey>"
     }
 
-    fun migrate(requestXml: String): String {
+
+    fun migrate(requestXml: String) = runCatching {
         log.trace("migrate entry, preview={}", requestXml)
         val opElement = firstElementInSoapBody(requestXml)
-            ?: return "<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>"
+            ?: throw FaultError("<BadRequestFault><FaultMessage>missing body element</FaultMessage></BadRequestFault>")
         val opXml = nodeToString(opElement)
         val req = xmlMapper.readValue<CompleteMigrationRecordRequestPojo>(opXml)
 
         val migrationKey = req.migrationKey
         val rec = migrationService.get(migrationKey)
-            ?: return "<BadRequestFault><FaultMessage>Invalid migrate request</FaultMessage></BadRequestFault>"
+            ?: throw FaultError("<BadRequestFault><FaultMessage>Invalid migrate request</FaultMessage></BadRequestFault>")
         val smp = publisherService.get(rec.toPublisher)
-            ?: return "<BadRequestFault><FaultMessage>Unknown to ServiceMetadataPublisherID: ${rec.toPublisher}</FaultMessage></BadRequestFault>"
+            ?: throw FaultError("<BadRequestFault><FaultMessage>Unknown to ServiceMetadataPublisherID: ${rec.toPublisher}</FaultMessage></BadRequestFault>")
 
         log.info("Starting migration for key {}", req.migrationKey)
         log.debug("Updating DNS for participant {}:{}", rec.scheme, rec.identifier)
@@ -319,7 +321,7 @@ class ManageBusinessIdentifier(
         log.debug("Deleting migration record for key {}", migrationKey)
         migrationService.delete(migrationKey)
         log.info("Migration for key {} completed", req.migrationKey)
-        return "<Result>OK</Result>"
+        "<Result>OK</Result>"
     }
 
     private fun updateParticipantDns(
@@ -333,7 +335,7 @@ class ManageBusinessIdentifier(
         log.debug("Updating dns records")
         dnsClient.updateNaptrRecord(
             "europa.eu",
-            "${identifier}.${scheme}.acc.edelivery.tech.ac",
+            "${identifier}.${scheme}.acc.edelivery.tech.ec",
             30,
             20,
             10,
@@ -344,7 +346,7 @@ class ManageBusinessIdentifier(
         )
         dnsClient.updateCNameRecord(
             "europa.eu",
-            "B-${cnameIdentifier}.${scheme}.acc.edelivery.tech.ac",
+            "B-${cnameIdentifier}.${scheme}.acc.edelivery.tech.ec",
             30,
             serviceMetadataPublisher.logicalAddress
         )

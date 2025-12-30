@@ -2,6 +2,7 @@ package be.endevops
 
 import be.endevops.svc.*
 import io.ktor.server.application.*
+import io.ktor.server.plugins.autohead.*
 import io.ktor.server.plugins.di.*
 import org.jetbrains.exposed.sql.Database
 import kotlin.io.path.createTempFile
@@ -11,11 +12,16 @@ fun main(args: Array<String>) =
     io.ktor.server.netty.EngineMain
         .main(args)
 
-fun Application.module() {
+
+fun Application.configureApplication() {
     configureMonitoring()
-    configureRouting()
+    install(AutoHeadResponse)
     configureBusinessIdentifier()
     configureManageServiceMetadata()
+}
+
+fun Application.module() {
+    configureApplication()
 
     val dbFile = environment.config.property("dbfile").getString()
     log.debug("Database url: {}", dbFile)
@@ -27,10 +33,7 @@ fun Application.module() {
 }
 
 fun Application.testModule() {
-    configureMonitoring()
-    configureRouting()
-    configureBusinessIdentifier()
-    configureManageServiceMetadata()
+    configureApplication()
 
     val temp = createTempFile("testdb", ".db")
     temp.deleteExisting()
@@ -53,3 +56,4 @@ fun Application.configureServices() {
         provide(ManageServiceMetadata::class)
     }
 }
+

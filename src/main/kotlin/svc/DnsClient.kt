@@ -14,7 +14,9 @@ data class DnsConfiguration(
 )
 
 class DnsClient(internal val dnsConfiguration: DnsConfiguration) {
-    private val logger = LoggerFactory.getLogger(DnsClient::class.java)!!
+    companion object {
+        private val logger = LoggerFactory.getLogger(DnsClient::class.java)!!
+    }
 
     fun addCNameRecord(
         zone: String,
@@ -24,7 +26,7 @@ class DnsClient(internal val dnsConfiguration: DnsConfiguration) {
     ) {
         val update = Update(zoneName(zone))
         logger.info("Preparing to add CNAME record: {} {} {} {}", name, ttl, canonicalName, zone)
-        update.add(CNAMERecord(fqdn(name, zone), DClass.IN, ttl, fqdn(canonicalName, zone)))
+        update.add(cNAMERecord(name, zone, ttl, canonicalName))
         sendUpdate(update)
     }
 
@@ -36,9 +38,12 @@ class DnsClient(internal val dnsConfiguration: DnsConfiguration) {
     ) {
         val update = Update(zoneName(zone))
         logger.info("Preparing to update CNAME record: {} {} {} {}", name, ttl, canonicalName, zone)
-        update.replace(CNAMERecord(fqdn(name, zone), DClass.IN, ttl, fqdn(canonicalName, zone)))
+        update.replace(cNAMERecord(name, zone, ttl, canonicalName))
         sendUpdate(update)
     }
+
+    private fun cNAMERecord(name: String, zone: String, ttl: Long, canonicalName: String): CNAMERecord =
+        CNAMERecord(fqdn(name, zone), DClass.IN, ttl, Name.fromString(canonicalName, Name.root))
 
     fun addNaptrRecord(
         zone: String,
@@ -64,17 +69,7 @@ class DnsClient(internal val dnsConfiguration: DnsConfiguration) {
             replacement,
         )
         update.add(
-            NAPTRRecord(
-                fqdn(name, zone),
-                DClass.IN,
-                ttl,
-                order,
-                preference,
-                flags,
-                service,
-                regexp,
-                if (replacement != ".") fqdn(replacement, zone) else Name(replacement),
-            ),
+            nAPTRRecord(name, zone, ttl, order, preference, flags, service, regexp, replacement),
         )
         sendUpdate(update)
     }
@@ -104,20 +99,32 @@ class DnsClient(internal val dnsConfiguration: DnsConfiguration) {
             replacement,
         )
         update.replace(
-            NAPTRRecord(
-                fqdn(name, zone),
-                DClass.IN,
-                ttl,
-                order,
-                preference,
-                flags,
-                service,
-                regexp,
-                if (replacement != ".") fqdn(replacement, zone) else Name(replacement),
-            ),
+            nAPTRRecord(name, zone, ttl, order, preference, flags, service, regexp, replacement),
         )
         sendUpdate(update)
     }
+
+    private fun nAPTRRecord(
+        name: String,
+        zone: String,
+        ttl: Long,
+        order: Int,
+        preference: Int,
+        flags: String,
+        service: String,
+        regexp: String,
+        replacement: String
+    ): NAPTRRecord = NAPTRRecord(
+        fqdn(name, zone),
+        DClass.IN,
+        ttl,
+        order,
+        preference,
+        flags,
+        service,
+        regexp,
+        Name(replacement, Name.root),
+    )
 
     fun deleteCNameRecord(
         zone: String,

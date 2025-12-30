@@ -4,7 +4,7 @@
             <pattern>[%date{ISO8601}] %highlight(%-5level) %logger{35} -%kvp- %msg %n</pattern>
         </encoder>
     </appender>
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
     <logger name="be.endevops" level="DEBUG"/>

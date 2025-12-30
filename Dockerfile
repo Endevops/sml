@@ -2,11 +2,12 @@
 
 # Build-time metadata
 ARG BUILDKIT_SBOM_SCAN_CONTEXT=true
+ARG JAVA_VERSION=21
 
 # --------------------
 # Builder: compile application with Gradle
 # --------------------
-FROM --platform=$BUILDPLATFORM gradle:8.5-jdk17 AS builder
+FROM --platform=$BUILDPLATFORM gradle:8.14-jdk${JAVA_VERSION} AS builder
 WORKDIR /home/gradle/project
 
 # Copy Gradle wrapper, build files and settings first to maximize cache hits
@@ -15,19 +16,18 @@ COPY gradle/ ./gradle/
 
 # Copy sources
 COPY src/ ./src/
+RUN mkdir -p data
 
 # Use cache mounts for Gradle caches to speed subsequent builds
 # Build the fat/executable jar (project provides buildFatJar task per AGENTS.md)
 RUN --mount=type=cache,target=/home/gradle/.gradle \
     --mount=type=cache,target=/root/.gradle \
-    chmod +x ./gradlew && \
-    ./gradlew --no-daemon buildFatJar -x test && \
-    mkdir -p data
+    gradle --no-daemon buildFatJar -x test
 
 # --------------------
 # Runtime: small, secure image
 # --------------------
-FROM gcr.io/distroless/java17-debian11:nonroot AS runtime
+FROM --platform=$BUILDPLATFORM gcr.io/distroless/java${JAVA_VERSION}-debian13:nonroot AS runtime
 
 ENV DB_FILE=/app/data/data.db
 VOLUME /app/data
@@ -48,4 +48,4 @@ COPY --from=builder --chown=65532:65532 /home/gradle/project/data/ /app/data/
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Xmx512m", "-jar", "/app/app.jar"]
