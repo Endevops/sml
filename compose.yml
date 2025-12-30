@@ -1,0 +1,9 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 18080:8080/tcp
+    environment:
+      DNS_SERVER: 128.0.0.1
