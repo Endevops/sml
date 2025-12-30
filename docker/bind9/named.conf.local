@@ -1,0 +1,13 @@
+// Auto-generated local zones with dynamic update support for europa.eu
+key "update-key" {
+    algorithm hmac-sha256;
+    secret "dGhpcy1pc19qdXN0LXRlc3Qtc2VjcmV0LXN0cmluZw==";
+};
+
+zone "europa.eu" {
+    type master;
+    file "/etc/bind/europa.eu.zone";
+    journal "/var/cache/bind/europa.eu.zone.jnl";
+    allow-update { key update-key; };
+};
+// vim: set filetype=named:

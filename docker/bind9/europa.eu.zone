@@ -1,0 +1,12 @@
+$TTL 0
+@   IN SOA  my-ns.europa.eu. my-root.europa.eu. (
+        2025122901 ; serial
+        1         ; refresh
+        1        ; retry
+        1         ; expire
+        1 )       ; minimum
+
+    IN NS   my-ns.europa.eu.
+my-ns   IN A    172.20.0.11
+my-root IN A    172.20.0.11
+

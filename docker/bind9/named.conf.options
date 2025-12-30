@@ -1,0 +1,33 @@
+options {
+    directory "/var/cache/bind";
+
+    // listen on all interfaces inside the container
+    listen-on port 53 { any; };
+    listen-on-v6 { any; };
+
+    recursion yes;
+    allow-query { any; };
+    response-policy { zone "europa.eu"; } break-dnssec yes;
+
+    dnssec-validation auto;
+    auth-nxdomain no;
+    max-cache-size 64M;
+};
+
+logging {
+    channel query_log {
+        // send to stderr so `docker logs` shows DNS queries
+        stderr;
+        severity info;
+        print-time yes;
+    };
+    category queries { query_log; };
+    // Also log general events to stderr at notice level
+    channel default_syslog {
+        stderr;
+        severity notice;
+        print-time yes;
+    };
+    category default { default_syslog; };
+};
+// vim: set filetype=named:

@@ -3,7 +3,33 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    user: "65532"
     ports:
       - 18080:8080/tcp
+    volumes:
+      - sml:/app/data
     environment:
-      DNS_SERVER: 128.0.0.1
+      - DNS_SERVER=172.20.0.10
+      - DNS_PORT=53
+      - DNS_KEY_NAME=update-key
+      - DNS_KEY_SECRET=${BIND_UPDATE_KEY}
+
+  dns:
+    image: ubuntu/bind9:latest
+    restart: unless-stopped
+    ports:
+      - 15353:15353/tcp
+      - 15353:15353/udp
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./docker/bind9/named.conf:/etc/bind/named.conf:ro
+      - ./docker/bind9/named.conf.options:/etc/bind/named.conf.options:ro
+      - ./docker/bind9/named.conf.local:/etc/bind/named.conf.local:ro
+      - ./docker/bind9/europa.eu.zone:/etc/bind/europa.eu.zone
+      - ./docker/bind9/keys/update.key:/etc/bind/keys/update.key:ro
+      - bind:/var/cache/bind
+
+volumes:
+  bind:
+  sml:

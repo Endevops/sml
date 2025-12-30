@@ -1,3 +1,6 @@
 [tools]
 gradle = "8"
 java = "21"
+
+[env]
+"BIND_UPDATE_KEY" = { value = "dGhpcy1pc19qdXN0LXRlc3Qtc2VjcmV0LXN0cmluZw==", redact = true }
