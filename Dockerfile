@@ -21,8 +21,15 @@ RUN mkdir -p data
 # Use cache mounts for Gradle caches to speed subsequent builds
 # Build the fat/executable jar (project provides buildFatJar task per AGENTS.md)
 RUN --mount=type=cache,target=/home/gradle/.gradle \
-    --mount=type=cache,target=/root/.gradle \
-    gradle --no-daemon buildFatJar -x test
+  --mount=type=cache,target=/root/.gradle \
+  gradle --no-daemon buildFatJar -x test
+
+# Probe builder: build a small static healthcheck probe
+FROM --platform=$BUILDPLATFORM golang:1.21-alpine AS probe-builder
+WORKDIR /probe
+COPY docker/healthcheck.go .
+RUN apk add --no-cache git && \
+  CGO_ENABLED=0  GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags "-s -w" -o /healthprobe ./healthcheck.go
 
 # --------------------
 # Runtime: small, secure image
@@ -34,17 +41,20 @@ VOLUME /app/data
 
 # Basic metadata labels (adjust source/maintainer as needed)
 LABEL org.opencontainers.image.title="sml-develop" \
-      org.opencontainers.image.description="Ktor SML service" \
-      org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.authors="TheYoxy <floryan.simar@endevops.be>" \
-      org.opencontainers.image.source="https://github.com/Endevops/sml-develop" \
-      org.opencontainers.image.vendor="Endevops"
+  org.opencontainers.image.description="Ktor SML service" \
+  org.opencontainers.image.licenses="MIT" \
+  org.opencontainers.image.authors="TheYoxy <floryan.simar@endevops.be>" \
+  org.opencontainers.image.source="https://github.com/Endevops/sml-develop" \
+  org.opencontainers.image.vendor="Endevops"
 
 WORKDIR /app
 # Copy the fat jar from the builder stage. Set ownership to distroless nonroot (65532)
 # Note: --chown requires BuildKit (Docker Buildx uses BuildKit by default)
+COPY --from=probe-builder --chown=65532:65532 /healthprobe /healthprobe
 COPY --from=builder --chown=65532:65532 /home/gradle/project/build/libs/*.jar /app/app.jar
 COPY --from=builder --chown=65532:65532 /home/gradle/project/data/ /app/data/
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/healthprobe"]
 
 EXPOSE 8080
 

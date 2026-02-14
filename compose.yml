@@ -18,8 +18,8 @@ services:
     image: ubuntu/bind9:latest
     restart: unless-stopped
     ports:
-      - 15353:15353/tcp
-      - 15353:15353/udp
+      - 15354:15353/tcp
+      - 15354:15353/udp
     cap_add:
       - NET_ADMIN
     volumes:
