@@ -1,51 +1,83 @@
 package be.endevops
 
-import be.endevops.svc.*
-import be.endevops.xml.*
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.di.*
-import io.ktor.server.plugins.di.annotations.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import be.endevops.svc.DnsClient
+import be.endevops.svc.MigrationService
+import be.endevops.svc.ParticipantIdentifier
+import be.endevops.svc.ParticipantService
+import be.endevops.svc.PublisherService
+import be.endevops.xml.CompleteMigrationRecordRequestPojo
+import be.endevops.xml.CreateListRequestPojo
+import be.endevops.xml.CreateParticipantIdentifierRequestPojo
+import be.endevops.xml.DeleteListRequestPojo
+import be.endevops.xml.DeleteParticipantIdentifierRequestPojo
+import be.endevops.xml.PageRequestPojo
+import be.endevops.xml.PageResponsePojo
+import be.endevops.xml.ParticipantIdentifierPojo
+import be.endevops.xml.PrepareMigrationRecordRequestPojo
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.withCharset
+import io.ktor.server.application.Application
+import io.ktor.server.application.log
+import io.ktor.server.plugins.di.annotations.Property
+import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.request.header
+import io.ktor.server.request.receiveText
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.RoutingHandler
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
 import org.slf4j.LoggerFactory
 import tools.jackson.dataformat.xml.XmlMapper
 import tools.jackson.module.kotlin.readValue
 
-fun Application.configureBusinessIdentifier() {
-    routing {
-        get("/manage-business-identifier") {
-            val wsdlRequested = call.request.queryParameters.contains("wsdl")
-            if (wsdlRequested) {
-                val resource =
-                    this::class.java.classLoader.getResourceAsStream("wsdl/peppol-sml-manage-business-identifier-service-v1.wsdl")
-                if (resource != null) {
-                    val content = resource.readBytes()
-                    call.respondBytes(content, ContentType.Text.Xml.withCharset(Charsets.UTF_8), HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.NotFound)
-                }
-            } else {
-                call.respond(HttpStatusCode.OK)
-            }
-        }
-        post("/manage-business-identifier") {
-            val raw = call.receiveText()
-            val soapAction = call.request.header("SOAPAction")
-            val responseXml = dispatchManageBusinessIdentifier(raw, soapAction)
+private val logger = LoggerFactory.getLogger(ManageBusinessIdentifier::class.java)!!
 
-            call.respondText(
-                responseXml.map {
-                    wrapInSoapEnvelope(it)
-                }.getOrElse {
-                    log.error("Error processing request:", it)
-                    wrapInSoapEnvelope(it.message ?: "unknown error")
-                },
-                ContentType.Text.Xml.withCharset(Charsets.UTF_8),
-                if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest
-            )
+
+
+
+fun Application.configureBusinessIdentifier() {
+    val getHandler: RoutingHandler = {
+        val wsdlRequested = call.request.queryParameters.contains("wsdl")
+        if (wsdlRequested) {
+            val resource =
+                this::class.java.classLoader.getResourceAsStream("wsdl/peppol-sml-manage-business-identifier-service-v1.wsdl")
+            if (resource != null) {
+                val content = resource.readBytes()
+                call.respondBytes(content, ContentType.Text.Xml.withCharset(Charsets.UTF_8), HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
+        } else {
+            call.respond(HttpStatusCode.OK)
         }
+    }
+    val postHandler: RoutingHandler = {
+        val raw = call.receiveText()
+        val soapAction = call.request.header("SOAPAction")
+        val responseXml = dispatchManageBusinessIdentifier(raw, soapAction)
+
+        call.respondText(
+            responseXml.map {
+                wrapInSoapEnvelope(it)
+            }.getOrElse {
+                logger.error("Error processing request:", it)
+                wrapInSoapEnvelope(it.message ?: "unknown error")
+            },
+            ContentType.Text.Xml.withCharset(Charsets.UTF_8),
+            if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest
+        )
+    }
+
+
+    routing {
+        get("/manageparticipantidentifier", getHandler)
+        get("/manage-business-identifier", getHandler)
+        post("/manageparticipantidentifier", postHandler)
+        post("/manage-business-identifier", postHandler)
     }
 }
 

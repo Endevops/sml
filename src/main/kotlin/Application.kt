@@ -1,9 +1,15 @@
 package be.endevops
 
-import be.endevops.svc.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.autohead.*
-import io.ktor.server.plugins.di.*
+import be.endevops.svc.DnsClient
+import be.endevops.svc.DnsConfiguration
+import be.endevops.svc.MigrationService
+import be.endevops.svc.ParticipantService
+import be.endevops.svc.PublisherService
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.application.log
+import io.ktor.server.plugins.autohead.AutoHeadResponse
+import io.ktor.server.plugins.di.dependencies
 import org.jetbrains.exposed.sql.Database
 import kotlin.io.path.createTempFile
 import kotlin.io.path.deleteExisting

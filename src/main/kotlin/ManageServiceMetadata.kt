@@ -1,51 +1,74 @@
 package be.endevops
 
 import be.endevops.svc.PublisherService
-import be.endevops.xml.*
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.di.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import be.endevops.xml.CreateServiceMetadataPublisherServiceRequestPojo
+import be.endevops.xml.CreateServiceMetadataPublisherServiceResponsePojo
+import be.endevops.xml.DeleteServiceMetadataPublisherServiceRequestPojo
+import be.endevops.xml.PublisherEndpointPojo
+import be.endevops.xml.ReadServiceMetadataPublisherServiceRequestPojo
+import be.endevops.xml.ReadServiceMetadataPublisherServiceResponsePojo
+import be.endevops.xml.UpdateDeleteServiceResponsePojo
+import be.endevops.xml.UpdateServiceMetadataPublisherServiceRequestPojo
+import be.endevops.xml.UpdateServiceMetadataPublisherServiceResponsePojo
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.withCharset
+import io.ktor.server.application.Application
+import io.ktor.server.application.log
+import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.request.header
+import io.ktor.server.request.receiveText
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.RoutingHandler
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
 import org.slf4j.LoggerFactory
 import tools.jackson.dataformat.xml.XmlMapper
 import tools.jackson.module.kotlin.readValue
 
 
 fun Application.configureManageServiceMetadata() {
-    routing {
-        get("/manage-service-metadata") {
-            // Serve WSDL when '?wsdl' is present; otherwise return OK
-            val wsdlRequested = call.request.queryParameters.contains("wsdl")
-            if (!wsdlRequested) {
-                call.respond(HttpStatusCode.OK)
+    val getHandler: RoutingHandler = {
+        // Serve WSDL when '?wsdl' is present; otherwise return OK
+        val wsdlRequested = call.request.queryParameters.contains("wsdl")
+        if (!wsdlRequested) {
+            call.respond(HttpStatusCode.OK)
+        } else {
+            val resource = this::class.java.classLoader.getResourceAsStream(
+                "wsdl/peppol-sml-manage-service-metadata-service-v1.wsdl",
+            )
+            if (resource != null) {
+                val content = resource.readBytes()
+                call.respondBytes(content, ContentType.Text.Xml.withCharset(Charsets.UTF_8), HttpStatusCode.OK)
             } else {
-                val resource = this::class.java.classLoader.getResourceAsStream(
-                    "wsdl/peppol-sml-manage-service-metadata-service-v1.wsdl",
-                )
-                if (resource != null) {
-                    val content = resource.readBytes()
-                    call.respondBytes(content, ContentType.Text.Xml.withCharset(Charsets.UTF_8), HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.NotFound)
-                }
+                call.respond(HttpStatusCode.NotFound)
             }
         }
-        post("/manage-service-metadata") {
-            val raw = call.receiveText()
-            val soapAction = call.request.header("SOAPAction")
-            val responseXml = dispatchManageServiceMetadata(raw, soapAction)
-            call.respondText(
-                responseXml.map {
-                    wrapInSoapEnvelope(it)
-                }.getOrElse {
-                    wrapInSoapEnvelope(it.message!!)
-                },
-                ContentType.Text.Xml.withCharset(Charsets.UTF_8),
-                if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest
-            )
-        }
+    }
+
+    val postHandler: RoutingHandler = {
+        val raw = call.receiveText()
+        val soapAction = call.request.header("SOAPAction")
+        val responseXml = dispatchManageServiceMetadata(raw, soapAction)
+        call.respondText(
+            responseXml.map {
+                wrapInSoapEnvelope(it)
+            }.getOrElse {
+                wrapInSoapEnvelope(it.message!!)
+            },
+            ContentType.Text.Xml.withCharset(Charsets.UTF_8),
+            if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest
+        )
+    }
+
+    routing {
+        get("/manageservicemetadata", getHandler)
+        get("/manage-service-metadata", getHandler)
+        post("/manageservicemetadata", postHandler)
+        post("/manage-service-metadata", postHandler)
     }
 }
 

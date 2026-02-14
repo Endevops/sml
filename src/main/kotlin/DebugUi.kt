@@ -3,12 +3,26 @@ package be.endevops
 import be.endevops.svc.MigrationService
 import be.endevops.svc.ParticipantService
 import be.endevops.svc.PublisherService
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.html.*
-import io.ktor.server.plugins.di.*
-import io.ktor.server.routing.*
-import kotlinx.html.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.Application
+import io.ktor.server.html.respondHtml
+import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
+import kotlinx.html.body
+import kotlinx.html.code
+import kotlinx.html.div
+import kotlinx.html.h1
+import kotlinx.html.h2
+import kotlinx.html.head
+import kotlinx.html.style
+import kotlinx.html.table
+import kotlinx.html.tbody
+import kotlinx.html.td
+import kotlinx.html.th
+import kotlinx.html.thead
+import kotlinx.html.title
+import kotlinx.html.tr
 import org.intellij.lang.annotations.Language
 
 fun Application.configureDebugUi() {
@@ -21,6 +35,7 @@ fun Application.configureDebugUi() {
             val publishers = publisherService.listAll()
             val participants = participantService.listAll()
             val migrations = migrationService.listAll()
+
             @Language("css")
             val style = """:root {
     color-scheme: light dark;
