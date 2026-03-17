@@ -1,6 +1,7 @@
 # sml
 
 This repo contains a small poc for an equivalent of the [peppol-sml](https://docs.peppol.eu/edelivery/).
+
 > Sorry, the doc from peppol doesn't have any reference other than pdf files that may disapears
 
 ## Why ?
@@ -18,17 +19,21 @@ The project is configured to use the test zone from peppol, `acc.edelivery.tech.
 ## Routes
 
 - GET `/`: Basic page to display what is stored inside the SML.
-- POST `/manage-service-metadata`: SOAP endpoint to manage the service registration
+- POST `/manage-service-metadata` | `/manageservicemetadata`: SOAP endpoint to manage the service registration
 
 > This is the URL suffix to put in `Manage SMPs`
 
-- POST `/manage-business-identifier`: SOAP endpoint to manage the identifiers
+- POST `/manage-business-identifier` | `/manageparticipantidentifier`: SOAP endpoint to manage the identifiers
 
 > This is the URL suffix to put in `Manage participants`
+
+> [!NOTE]
+> The 2 urls `/manageservicemetadata`and `/manageparticipantidentifier` were added to be easier to integrate with [phoss-smp](https://github.com/phax/phoss-smp) while not having to change other configurations that the test zone.
 
 ## Configuration
 
 There is multiple environment variable that can be set to configure the service:
+
 - `SML_DNS_SERVER`: The dns server to use to perform the update (default: `127.0.0.1`)
 - `SML_DNS_PORT`: The dns server port (default: `53`)
 - `SML_DNS_ZONE`: The dns zone to use (default: `acc.edelivery.tech.ec.europa.eu`)
@@ -36,3 +41,4 @@ There is multiple environment variable that can be set to configure the service:
 - `SML_DNS_KEY_NAME`: The dns key name to use for the update (default: `default`)
 - `SML_DNS_KEY_SECRET`: The dns key secret to use for the update (default: `default`)
 - `SML_SERVICE_PORT`: The port the service will listen to (default: `8080`)
+

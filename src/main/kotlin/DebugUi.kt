@@ -116,6 +116,46 @@ code {
                     div("content") {
                         h1 { +"SML Debug - Database Contents" }
 
+                        h2 { +"Routes" }
+                        div("table-wrap") {
+                            table {
+                                thead {
+                                    tr {
+                                        th { +"Method" }
+                                        th { +"Path" }
+                                        th { +"Description" }
+                                    }
+                                }
+                                tbody {
+                                    tr {
+                                        td { +"GET" }
+                                        td { code { +"/" } }
+                                        td { +"SML Debug UI — shows database contents (publishers, participants, migrations)" }
+                                    }
+                                    tr {
+                                        td { +"GET" }
+                                        td { code { +"/manageservicemetadata, /manage-service-metadata" } }
+                                        td { +"Serve WSDL when ?wsdl is present; otherwise returns 200 OK. Manage Service Metadata SOAP endpoint (create/read/update/delete publishers)." }
+                                    }
+                                    tr {
+                                        td { +"POST" }
+                                        td { code { +"/manageservicemetadata, /manage-service-metadata" } }
+                                        td { +"SOAP endpoint for Manage Service Metadata operations; accepts SOAP envelopes and returns XML responses." }
+                                    }
+                                    tr {
+                                        td { +"GET" }
+                                        td { code { +"/manageparticipantidentifier, /manage-business-identifier" } }
+                                        td { +"Serve WSDL when ?wsdl is present; otherwise returns 200 OK. Manage Business Identifier service (participant operations)." }
+                                    }
+                                    tr {
+                                        td { +"POST" }
+                                        td { code { +"/manageparticipantidentifier, /manage-business-identifier" } }
+                                        td { +"SOAP endpoint for Manage Business Identifier operations: create/delete/list/batch/prepare/migrate participant identifiers." }
+                                    }
+                                }
+                            }
+                        }
+
                         h2 { +"Publishers" }
                         div("table-wrap") {
                             table {
