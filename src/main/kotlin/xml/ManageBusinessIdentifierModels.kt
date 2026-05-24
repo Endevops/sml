@@ -1,55 +1,76 @@
 package be.endevops.xml
 
-import com.fasterxml.jackson.annotation.JsonRootName
-import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
-import tools.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import tools.jackson.dataformat.xml.annotation.JacksonXmlText
+import kotlinx.serialization.Serializable
+import nl.adaptivity.xmlutil.serialization.XmlElement
+import nl.adaptivity.xmlutil.serialization.XmlSerialName
+import nl.adaptivity.xmlutil.serialization.XmlValue
 
+const val IDENTIFIER_NS = "http://busdox.org/transport/identifiers/1.0/"
 
-// POJOs for Manage Business Identifier SOAP operations
-
-@JsonRootName(value = "ParticipantIdentifier")
+@Serializable
+@XmlSerialName(value = "ParticipantIdentifier", namespace = IDENTIFIER_NS)
 data class ParticipantIdentifierPojo(
-    @param:JacksonXmlText @param:JacksonXmlProperty(localName = "text") val identifier: String = "",
-    @field:JacksonXmlProperty(localName = "scheme", isAttribute = true) val scheme: String = "iso6523-actorid-upis",
+    @XmlValue val identifier: String = "",
+    @XmlSerialName(value = "scheme") @XmlElement(value = false) val scheme: String = "iso6523-actorid-upis",
 )
 
+@Serializable
 data class CreateParticipantIdentifierRequestPojo(
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID") val serviceMetadataPublisherID: String,
-    @param:JacksonXmlProperty(localName = "ParticipantIdentifier") val participantIdentifier: ParticipantIdentifierPojo,
+    @XmlSerialName(
+        value = "ServiceMetadataPublisherID",
+        namespace = IDENTIFIER_NS,
+    )
+    @XmlElement(value = true) val serviceMetadataPublisherID: String,
+    @XmlSerialName(value = "ParticipantIdentifier", namespace = IDENTIFIER_NS)
+    @XmlElement(value = true) val participantIdentifier: ParticipantIdentifierPojo,
 )
 
+@Serializable
 data class DeleteParticipantIdentifierRequestPojo(
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID") val serviceMetadataPublisherID: String,
-    @param:JacksonXmlProperty(localName = "ParticipantIdentifier") val participantIdentifier: ParticipantIdentifierPojo,
+    @XmlElement(value = true)
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = IDENTIFIER_NS) val serviceMetadataPublisherID: String,
+    @XmlSerialName(value = "ParticipantIdentifier", namespace = IDENTIFIER_NS) val participantIdentifier: ParticipantIdentifierPojo,
 )
 
+@Serializable
 data class PageRequestPojo(
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID") val serviceMetadataPublisherID: String,
+    @XmlElement(value = true)
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = IDENTIFIER_NS) val serviceMetadataPublisherID: String,
 )
 
+@Serializable
 data class PageResponsePojo(
-    @param:JacksonXmlProperty(localName = "ParticipantIdentifier") @param:JacksonXmlElementWrapper(useWrapping = false) val participantIdentifier: List<ParticipantIdentifierPojo>,
+    @XmlSerialName(value = "ParticipantIdentifier", namespace = IDENTIFIER_NS) val participantIdentifier: List<ParticipantIdentifierPojo>,
 )
 
+@Serializable
 data class CreateListRequestPojo(
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID") val serviceMetadataPublisherID: String,
-    @param:JacksonXmlProperty(localName = "ParticipantIdentifier") @param:JacksonXmlElementWrapper(useWrapping = false) val participantIdentifier: List<ParticipantIdentifierPojo>,
+    @XmlElement(value = true)
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = IDENTIFIER_NS) val serviceMetadataPublisherID: String,
+    @XmlSerialName(value = "ParticipantIdentifier", namespace = IDENTIFIER_NS) val participantIdentifier: List<ParticipantIdentifierPojo>,
 )
 
+@Serializable
 data class DeleteListRequestPojo(
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID") val serviceMetadataPublisherID: String,
-    @param:JacksonXmlProperty(localName = "ParticipantIdentifier") @param:JacksonXmlElementWrapper(useWrapping = false) val participantIdentifier: List<ParticipantIdentifierPojo>,
+    @XmlElement(value = true)
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = IDENTIFIER_NS) val serviceMetadataPublisherID: String,
+    @XmlSerialName(value = "ParticipantIdentifier", namespace = IDENTIFIER_NS) val participantIdentifier: List<ParticipantIdentifierPojo>,
 )
 
+@Serializable
 data class PrepareMigrationRecordRequestPojo(
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID") val serviceMetadataPublisherID: String,
-    @param:JacksonXmlProperty(localName = "ParticipantIdentifier") val participantIdentifier: ParticipantIdentifierPojo,
-    @param:JacksonXmlProperty(localName = "MigrationKey") val migrationKey: String,
+    @XmlElement(value = true)
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = IDENTIFIER_NS) val serviceMetadataPublisherID: String,
+    @XmlSerialName(value = "ParticipantIdentifier", namespace = IDENTIFIER_NS) val participantIdentifier: ParticipantIdentifierPojo,
+    @XmlElement(value = true)
+    @XmlSerialName(value = "MigrationKey", namespace = IDENTIFIER_NS) val migrationKey: String,
 )
 
+@Serializable
 data class CompleteMigrationRecordRequestPojo(
-    @param:JacksonXmlProperty(localName = "MigrationKey") val migrationKey: String,
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID") val serviceMetadataPublisherID: String,
-    @param:JacksonXmlProperty(localName = "ParticipantIdentifier") val participantIdentifier: ParticipantIdentifierPojo,
+    @XmlElement(value = true)
+    @XmlSerialName(value = "MigrationKey", namespace = IDENTIFIER_NS) val migrationKey: String,
+    @XmlElement(value = true)
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = IDENTIFIER_NS) val serviceMetadataPublisherID: String,
+    @XmlSerialName(value = "ParticipantIdentifier", namespace = IDENTIFIER_NS) val participantIdentifier: ParticipantIdentifierPojo,
 )

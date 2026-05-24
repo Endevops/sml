@@ -10,6 +10,15 @@ import (
 )
 
 func main() {
+	args := os.Args[1:]
+
+	var path string
+	if len(args) == 1 {
+		path = args[0]
+	} else {
+		path = "/"
+	}
+
 	host := "127.0.0.1:8080"
 	timeout := 2 * time.Second
 
@@ -19,7 +28,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	req := "GET / HTTP/1.0\r\nHost: localhost\r\n\r\n"
+	req := fmt.Sprintf("GET %s HTTP/1.0\r\nHost: localhost\r\n\r\n", path)
 	conn.SetWriteDeadline(time.Now().Add(timeout))
 	_, err = conn.Write([]byte(req))
 	if err != nil {

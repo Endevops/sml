@@ -10,7 +10,7 @@ import io.ktor.server.application.install
 import io.ktor.server.application.log
 import io.ktor.server.plugins.autohead.AutoHeadResponse
 import io.ktor.server.plugins.di.dependencies
-import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.v1.jdbc.Database
 import kotlin.io.path.createTempFile
 import kotlin.io.path.deleteExisting
 

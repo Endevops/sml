@@ -1,8 +1,15 @@
 package be.endevops.svc
 
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
 
 // Simple Participant identifier model
@@ -32,8 +39,8 @@ class ParticipantService(
         }
     }
 
-    fun create(p: ParticipantIdentifier): Int =
-        transaction(database) {
+    suspend fun create(p: ParticipantIdentifier): Int =
+        suspendTransaction(database) {
             logger.debug("Creating participant: {}", p)
             Participants.insert {
                 it[publisherId] = p.publisherId
@@ -42,12 +49,12 @@ class ParticipantService(
             }[Participants.id]
         }
 
-    fun delete(
+    suspend fun delete(
         publisherIdStr: String,
         schemeStr: String,
         identifierStr: String,
     ): Boolean =
-        transaction(database) {
+        suspendTransaction(database) {
             logger.debug("Deleting participant: {}", publisherIdStr)
             val deleted =
                 Participants.deleteWhere {
@@ -57,11 +64,11 @@ class ParticipantService(
             deleted > 0
         }
 
-    fun listByPublisher(
+    suspend fun listByPublisher(
         publisherIdStr: String,
         pageSize: Int = 100,
     ): List<ParticipantIdentifier> =
-        transaction(database) {
+        suspendTransaction(database) {
             logger.debug("Listing participants for publisher: {}", publisherIdStr)
             Participants
                 .selectAll()
@@ -76,8 +83,8 @@ class ParticipantService(
                 }
         }
 
-    fun listAll(): List<ParticipantIdentifier> =
-        transaction(database) {
+    suspend fun listAll(): List<ParticipantIdentifier> =
+        suspendTransaction(database) {
             Participants.selectAll().map {
                 ParticipantIdentifier(
                     publisherId = it[Participants.publisherId],

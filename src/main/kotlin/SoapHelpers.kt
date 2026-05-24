@@ -1,11 +1,15 @@
 package be.endevops
 
+import org.intellij.lang.annotations.Language
 import org.w3c.dom.Element
 import org.xml.sax.InputSource
 import java.io.StringReader
 import javax.xml.parsers.DocumentBuilderFactory
 
-class FaultError(message: String) : Throwable(message)
+class FaultError(
+    @Language("xml")
+    message: String
+) : Throwable(message)
 
 fun firstElementInSoapBody(xml: String): Element? {
     return runCatching {

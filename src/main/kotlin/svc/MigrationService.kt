@@ -1,8 +1,14 @@
 package be.endevops.svc
 
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 class MigrationService(
     private val database: Database,
@@ -29,8 +35,8 @@ class MigrationService(
         val identifier: String,
     )
 
-    fun create(r: MigrationRecord) =
-        transaction(database) {
+    suspend fun create(r: MigrationRecord) =
+        suspendTransaction(database) {
             Migrations.insert {
                 it[key] = r.key
                 it[fromPublisher] = r.fromPublisher
@@ -39,8 +45,8 @@ class MigrationService(
             }[Migrations.key]
         }
 
-    fun get(key: String) =
-        transaction(database) {
+    suspend fun get(key: String) =
+        suspendTransaction(database) {
             Migrations
                 .selectAll()
                 .where {
@@ -56,15 +62,15 @@ class MigrationService(
                 }
         }
 
-    fun delete(key: String) =
-        transaction(database) {
+    suspend fun delete(key: String) =
+        suspendTransaction(database) {
             Migrations.deleteWhere {
                 Migrations.key eq key
             }
         }
 
-    fun listAll(): List<MigrationRecord> =
-        transaction(database) {
+    suspend fun listAll(): List<MigrationRecord> =
+        suspendTransaction(database) {
             Migrations.selectAll().map {
                 MigrationRecord(
                     key = it[Migrations.key],

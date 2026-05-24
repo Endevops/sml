@@ -1,31 +1,34 @@
-# syntax=docker/dockerfile:1.4
+# syntax=docker/dockerfile:1-labs
 
 # Build-time metadata
 ARG BUILDKIT_SBOM_SCAN_CONTEXT=true
-ARG JAVA_VERSION=21
+ARG JAVA_VERSION=25
 
 # --------------------
 # Builder: compile application with Gradle
 # --------------------
-FROM --platform=$BUILDPLATFORM gradle:8.14-jdk${JAVA_VERSION} AS builder
-WORKDIR /home/gradle/project
+FROM --platform=$BUILDPLATFORM gradle:9-jdk${JAVA_VERSION} AS builder
+ENV GRADLE_USER_HOME=/home/gradle/.gradle
+WORKDIR /gradle
 
 # Copy Gradle wrapper, build files and settings first to maximize cache hits
-COPY settings.gradle.kts build.gradle.kts gradle.properties gradlew gradlew.bat ./
-COPY gradle/ ./gradle/
+COPY --parents settings.gradle.kts build.gradle.kts gradle.properties gradlew gradlew.bat gradle/ ./
+
+RUN --mount=type=cache,target=/home/gradle/.gradle \
+  ./gradlew --no-daemon dependencies || true
 
 # Copy sources
-COPY src/ ./src/
+COPY ./ ./
 RUN mkdir -p data
 
 # Use cache mounts for Gradle caches to speed subsequent builds
 # Build the fat/executable jar (project provides buildFatJar task per AGENTS.md)
 RUN --mount=type=cache,target=/home/gradle/.gradle \
   --mount=type=cache,target=/root/.gradle \
-  gradle --no-daemon buildFatJar -x test
+  gradle --no-daemon buildFatJar -x test -Pversion=${VERSION} -Dversion=${VERSION} --parallel --max-workers=4
 
 # Probe builder: build a small static healthcheck probe
-FROM --platform=$BUILDPLATFORM golang:1.21-alpine AS probe-builder
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS probe-builder
 WORKDIR /probe
 COPY docker/healthcheck.go .
 RUN apk add --no-cache git && \
@@ -51,11 +54,10 @@ WORKDIR /app
 # Copy the fat jar from the builder stage. Set ownership to distroless nonroot (65532)
 # Note: --chown requires BuildKit (Docker Buildx uses BuildKit by default)
 COPY --from=probe-builder --chown=65532:65532 /healthprobe /healthprobe
-COPY --from=builder --chown=65532:65532 /home/gradle/project/build/libs/*.jar /app/app.jar
-COPY --from=builder --chown=65532:65532 /home/gradle/project/data/ /app/data/
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/healthprobe"]
+COPY --from=builder --chown=65532:65532 /gradle/build/libs/*.jar /app/app.jar
+COPY --from=builder --chown=65532:65532 /gradle/data/ /app/data/
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/healthprobe", "/health"]
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Xmx512m", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints",  "-Xms128m", "-Xmx1g", "-Xmx512m", "-jar", "/app/app.jar"]

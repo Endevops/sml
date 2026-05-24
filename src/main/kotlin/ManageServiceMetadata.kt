@@ -73,7 +73,7 @@ fun Application.configureManageServiceMetadata() {
 }
 
 // Dispatcher entry point
-fun Application.dispatchManageServiceMetadata(
+suspend fun Application.dispatchManageServiceMetadata(
     requestXml: String,
     soapActionHeader: String?,
 ): Result<String> {
@@ -116,7 +116,7 @@ class ManageServiceMetadata(val publisherService: PublisherService) {
     private val log = LoggerFactory.getLogger(ManageServiceMetadata::class.java)!!
     private val xmlMapper: XmlMapper = XmlMapper.builder().nameForTextElement("text").findAndAddModules().build()
 
-    fun createParticipant(requestXml: String) = runCatching {
+    suspend fun createParticipant(requestXml: String) = runCatching {
         log.debug("createParticipant: entry, requestPreview={}", requestXml)
 
         val opElement = firstElementInSoapBody(requestXml) ?: throw FaultError(
@@ -151,7 +151,7 @@ class ManageServiceMetadata(val publisherService: PublisherService) {
         xmlMapper.writeValueAsString(respPojo)
     }
 
-    fun handleRead(requestXml: String) = runCatching {
+    suspend fun handleRead(requestXml: String) = runCatching {
         log.debug("handleRead: entry, requestPreview={}", requestXml)
 
         val opElement = firstElementInSoapBody(requestXml) ?: run {
@@ -189,7 +189,7 @@ class ManageServiceMetadata(val publisherService: PublisherService) {
         )
     }
 
-    fun handleUpdate(requestXml: String) = runCatching {
+    suspend fun handleUpdate(requestXml: String) = runCatching {
         log.debug("handleUpdate: entry, requestPreview={}", requestXml)
 
         val opElement = firstElementInSoapBody(requestXml) ?: throw FaultError(
@@ -216,7 +216,7 @@ class ManageServiceMetadata(val publisherService: PublisherService) {
         xmlMapper.writeValueAsString(UpdateServiceMetadataPublisherServiceResponsePojo(result = "OK"))
     }
 
-    fun handleDelete(requestXml: String) = runCatching {
+    suspend fun handleDelete(requestXml: String) = runCatching {
         log.debug("handleDelete: entry, requestPreview={}", requestXml)
 
         val opElement = firstElementInSoapBody(requestXml) ?: throw FaultError(

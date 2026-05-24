@@ -14,4 +14,3 @@ dns:
   port: ${DNS_PORT:53}
   keyname: ${DNS_KEY_NAME:default}
   keysecret: ${DNS_KEY_SECRET:default}
-

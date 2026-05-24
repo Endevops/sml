@@ -1,109 +1,118 @@
 package be.endevops.xml
 
-import com.fasterxml.jackson.annotation.JsonAlias
-import com.fasterxml.jackson.annotation.JsonRootName
-import tools.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import kotlinx.serialization.Serializable
+import nl.adaptivity.xmlutil.serialization.XmlElement
+import nl.adaptivity.xmlutil.serialization.XmlSerialName
 
 // POJOs for Manage Service Metadata SOAP operations using Jackson XML annotations.
 // Field localNames match the XML element names used in the existing SerializationModels and tests.
 
-@JsonRootName(value = "PublisherEndpoint")
+@Serializable
+@XmlSerialName(value = "PublisherEndpoint")
 data class PublisherEndpointPojo(
-    @param:JacksonXmlProperty(localName = "LogicalAddress")
-    @param:JsonAlias("LogicalAddress")
+    @XmlSerialName(value = "LogicalAddress")
+    @XmlElement(value = true)
     val logicalAddress: String,
-    @param:JacksonXmlProperty(localName = "PhysicalAddress")
-    @param:JsonAlias("PhysicalAddress")
+    @XmlSerialName(value = "PhysicalAddress")
+    @XmlElement(value = true)
     val physicalAddress: String,
 )
 
 // Create request
-@JsonRootName(value = "CreateServiceMetadataPublisherService")
+@Serializable
+@XmlSerialName(value = "CreateServiceMetadataPublisherService")
 data class CreateServiceMetadataPublisherServiceRequestPojo(
-    @param:JacksonXmlProperty(localName = "PublisherEndpoint")
-    @param:JsonAlias("PublisherEndpoint")
+    @XmlSerialName(value = "PublisherEndpoint")
+    @XmlElement(value = true)
     val publisherEndpoint: PublisherEndpointPojo,
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID")
-    @param:JsonAlias("ServiceMetadataPublisherID")
+    @XmlSerialName(value = "ServiceMetadataPublisherID")
+    @XmlElement(value = true)
     val serviceMetadataPublisherID: String,
 )
 
 // Create response
-@JsonRootName(value = "CreateServiceMetadataPublisherServiceResponse")
+@Serializable
+@XmlSerialName(value = "CreateServiceMetadataPublisherServiceResponse")
 data class CreateServiceMetadataPublisherServiceResponsePojo(
-    @param:JacksonXmlProperty(localName = "Result")
-    @param:JsonAlias("Result")
+    @XmlSerialName(value = "Result")
+    @XmlElement(value = true)
     val result: String? = null,
-    @param:JacksonXmlProperty(localName = "DatabaseId")
-    @param:JsonAlias("DatabaseId")
+    @XmlSerialName(value = "DatabaseId")
+    @XmlElement(value = true)
     val databaseId: Int? = null,
-    @param:JacksonXmlProperty(localName = "FaultMessage")
-    @param:JsonAlias("FaultMessage")
+    @XmlSerialName(value = "FaultMessage")
+    @XmlElement(value = true)
     val faultMessage: String? = null,
 )
 
 // Read request
-@JsonRootName(value = "ReadServiceMetadataPublisherService")
+@Serializable
+@XmlSerialName(value = "ReadServiceMetadataPublisherService")
 data class ReadServiceMetadataPublisherServiceRequestPojo(
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID")
-    @param:JsonAlias("ServiceMetadataPublisherID")
+    @XmlSerialName(value = "ServiceMetadataPublisherID")
+    @XmlElement(value = true)
     val serviceMetadataPublisherID: String,
 )
 
 // Read response
-@JsonRootName(value = "ReadServiceMetadataPublisherServiceResponse")
+@Serializable
+@XmlSerialName(value = "ReadServiceMetadataPublisherServiceResponse")
 data class ReadServiceMetadataPublisherServiceResponsePojo(
-    @param:JacksonXmlProperty(localName = "Result")
-    @param:JsonAlias("Result")
+    @XmlSerialName(value = "Result")
+    @XmlElement(value = true)
     val result: String? = null,
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID")
-    @param:JsonAlias("ServiceMetadataPublisherID")
+    @XmlSerialName(value = "ServiceMetadataPublisherID")
+    @XmlElement(value = true)
     val serviceMetadataPublisherID: String? = null,
-    @param:JacksonXmlProperty(localName = "PublisherEndpoint")
-    @param:JsonAlias("PublisherEndpoint")
+    @XmlSerialName(value = "PublisherEndpoint")
+    @XmlElement(value = true)
     val publisherEndpoint: PublisherEndpointPojo? = null,
-    @param:JacksonXmlProperty(localName = "FaultMessage")
-    @param:JsonAlias("FaultMessage")
+    @XmlSerialName(value = "FaultMessage")
+    @XmlElement(value = true)
     val faultMessage: String? = null,
 )
 
 // Update request (same structure as Create)
-@JsonRootName(value = "UpdateServiceMetadataPublisherService")
+@Serializable
+@XmlSerialName(value = "UpdateServiceMetadataPublisherService")
 data class UpdateServiceMetadataPublisherServiceRequestPojo(
-    @param:JacksonXmlProperty(localName = "PublisherEndpoint")
-    @param:JsonAlias("PublisherEndpoint")
+    @XmlSerialName(value = "PublisherEndpoint")
+    @XmlElement(value = true)
     val publisherEndpoint: PublisherEndpointPojo,
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID")
-    @param:JsonAlias("ServiceMetadataPublisherID")
+    @XmlElement(value = true)
+    @XmlSerialName(value = "ServiceMetadataPublisherID")
     val serviceMetadataPublisherID: String,
 )
 
 // Update response
-@JsonRootName(value = "UpdateServiceMetadataPublisherServiceResponse")
+@Serializable
+@XmlSerialName(value = "UpdateServiceMetadataPublisherServiceResponse")
 data class UpdateServiceMetadataPublisherServiceResponsePojo(
-    @param:JacksonXmlProperty(localName = "Result")
-    @param:JsonAlias("Result")
+    @XmlSerialName(value = "Result")
+    @XmlElement(value = true)
     val result: String? = null,
-    @param:JacksonXmlProperty(localName = "FaultMessage")
-    @param:JsonAlias("FaultMessage")
+    @XmlElement(value = true)
+    @XmlSerialName(value = "FaultMessage")
     val faultMessage: String? = null,
 )
 
 // Delete request (same as Read request shape)
-@JsonRootName(value = "DeleteServiceMetadataPublisherService")
+@Serializable
+@XmlSerialName(value = "DeleteServiceMetadataPublisherService")
 data class DeleteServiceMetadataPublisherServiceRequestPojo(
-    @param:JacksonXmlProperty(localName = "ServiceMetadataPublisherID")
-    @param:JsonAlias("ServiceMetadataPublisherID")
+    @XmlSerialName(value = "ServiceMetadataPublisherID")
+    @XmlElement(value = true)
     val serviceMetadataPublisherID: String,
 )
 
 // Shared Update/Delete response type
-@JsonRootName(value = "UpdateDeleteServiceResponse")
+@Serializable
+@XmlSerialName(value = "UpdateDeleteServiceResponse")
 data class UpdateDeleteServiceResponsePojo(
-    @param:JacksonXmlProperty(localName = "Result")
-    @param:JsonAlias("Result")
+    @XmlSerialName(value = "Result")
+    @XmlElement(value = true)
     val result: String? = null,
-    @param:JacksonXmlProperty(localName = "FaultMessage")
-    @param:JsonAlias("FaultMessage")
+    @XmlSerialName(value = "FaultMessage")
+    @XmlElement(value = true)
     val faultMessage: String? = null,
 )

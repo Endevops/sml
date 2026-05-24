@@ -1,14 +1,15 @@
 package be.endevops.svc
 
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 
 class PublisherService(
     private val database: Database,
@@ -35,27 +36,25 @@ class PublisherService(
         val physicalAddress: String,
     )
 
-    fun create(p: ServiceMetadataPublisher): Int {
-        return transaction(database) {
-            // return existing id if publisher_id already present
-            val existing =
-                Publishers
-                    .selectAll()
-                    .where { Publishers.publisherId eq p.publisherId }
-                    .map { it[Publishers.id] }
-                    .singleOrNull()
-            if (existing != null) return@transaction existing
+    suspend fun create(p: ServiceMetadataPublisher): Int = suspendTransaction(database) {
+        // return existing id if publisher_id already present
+        val existing =
+            Publishers
+                .selectAll()
+                .where { Publishers.publisherId eq p.publisherId }
+                .map { it[Publishers.id] }
+                .singleOrNull()
+        if (existing != null) return@suspendTransaction existing
 
-            Publishers.insert {
-                it[publisherId] = p.publisherId
-                it[logicalAddress] = p.logicalAddress
-                it[physicalAddress] = p.physicalAddress
-            }[Publishers.id]
-        }
+        Publishers.insert {
+            it[publisherId] = p.publisherId
+            it[logicalAddress] = p.logicalAddress
+            it[physicalAddress] = p.physicalAddress
+        }[Publishers.id]
     }
 
-    fun get(publisherIdStr: String): ServiceMetadataPublisher? =
-        transaction(database) {
+    suspend fun get(publisherIdStr: String): ServiceMetadataPublisher? =
+        suspendTransaction(database) {
             Publishers
                 .selectAll()
                 .where { Publishers.publisherId eq publisherIdStr }
@@ -71,16 +70,16 @@ class PublisherService(
     /**
      * Check if a publisher with the given publisherId exists in the database.
      */
-    fun exists(publisherId: String): Boolean =
-        transaction(database) {
+    suspend fun exists(publisherId: String): Boolean =
+        suspendTransaction(database) {
             Publishers
                 .selectAll()
                 .where { Publishers.publisherId eq publisherId }
                 .count() > 0
         }
 
-    fun update(p: ServiceMetadataPublisher): Boolean =
-        transaction(database) {
+    suspend fun update(p: ServiceMetadataPublisher): Boolean =
+        suspendTransaction(database) {
             val updated =
                 Publishers.update({ Publishers.publisherId eq p.publisherId }) {
                     it[logicalAddress] = p.logicalAddress
@@ -89,14 +88,14 @@ class PublisherService(
             updated > 0
         }
 
-    fun deleteByPublisherId(publisherIdStr: String): Boolean =
-        transaction(database) {
+    suspend fun deleteByPublisherId(publisherIdStr: String): Boolean =
+        suspendTransaction(database) {
             val deleted = Publishers.deleteWhere { Publishers.publisherId eq publisherIdStr }
             deleted > 0
         }
 
-    fun listAll(): List<ServiceMetadataPublisher> =
-        transaction(database) {
+    suspend fun listAll(): List<ServiceMetadataPublisher> =
+        suspendTransaction(database) {
             Publishers.selectAll().map {
                 ServiceMetadataPublisher(
                     publisherId = it[Publishers.publisherId],
