@@ -34,11 +34,16 @@ The project is configured to use the test zone from peppol, `acc.edelivery.tech.
 
 There is multiple environment variable that can be set to configure the service:
 
+- `SML_DB_FILE`: The sqlite database location.
+
 - `SML_DNS_SERVER`: The dns server to use to perform the update (default: `127.0.0.1`)
 - `SML_DNS_PORT`: The dns server port (default: `53`)
-- `SML_DNS_ZONE`: The dns zone to use (default: `acc.edelivery.tech.ec.europa.eu`)
-- `SML_DNS_TTL`: The ttl to use for the dns records (default: `3600`)
+
+- `SML_DNS_ZONE`: The dns zone to use (default: `europa.eu`)
+- `SML_DNS_DOMAIN`: The dns domain to use (default: `acc.edelivery.tech.ec.europa.eu`)
+  > If this domain doesn't contains the `SML_DSN_ZONE`, it is automatically append at the end.
+
 - `SML_DNS_KEY_NAME`: The dns key name to use for the update (default: `default`)
 - `SML_DNS_KEY_SECRET`: The dns key secret to use for the update (default: `default`)
-- `SML_SERVICE_PORT`: The port the service will listen to (default: `8080`)
 
+The application runs on the port 8080 by default, but could be mapped to any other port using docker port binding.

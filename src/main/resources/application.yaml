@@ -6,11 +6,11 @@ ktor:
     modules:
       - be.endevops.ApplicationKt.module
 
-dbfile: ${DB_FILE:./data/database.db}
+dbfile: ${SML_DB_FILE:./data/database.db}
 dns:
-  zone: ${DNS_ZONE:europa.eu}
-  domain: ${DNS_DOMAIN:acc.edelivery.tech.ec.europa.eu}
-  server: ${DNS_SERVER:127.0.0.1}
-  port: ${DNS_PORT:53}
-  keyname: ${DNS_KEY_NAME:default}
-  keysecret: ${DNS_KEY_SECRET:default}
+  server: ${SML_DNS_SERVER:127.0.0.1}
+  port: ${SML_DNS_PORT:53}
+  zone: ${SML_DNS_ZONE:europa.eu}
+  domain: ${SML_DNS_DOMAIN:acc.edelivery.tech.ec.europa.eu}
+  keyname: ${SML_DNS_KEY_NAME:default}
+  keysecret: ${SML_DNS_KEY_SECRET:default}
