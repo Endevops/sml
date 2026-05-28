@@ -56,7 +56,7 @@ WORKDIR /app
 COPY --from=probe-builder --chown=65532:65532 /healthprobe /healthprobe
 COPY --from=builder --chown=65532:65532 /gradle/build/libs/*.jar /app/app.jar
 COPY --from=builder --chown=65532:65532 /gradle/data/ /app/data/
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/healthprobe", "/health"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/healthprobe", "/"]
 
 EXPOSE 8080
 
