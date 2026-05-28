@@ -10,10 +10,10 @@ import be.endevops.xml.CreateListRequestPojo
 import be.endevops.xml.CreateParticipantIdentifierRequestPojo
 import be.endevops.xml.DeleteListRequestPojo
 import be.endevops.xml.DeleteParticipantIdentifierRequestPojo
+import be.endevops.xml.MigrationRecordType
 import be.endevops.xml.PageRequestPojo
 import be.endevops.xml.PageResponsePojo
-import be.endevops.xml.ParticipantIdentifierPojo
-import be.endevops.xml.PrepareMigrationRecordRequestPojo
+import be.endevops.xml.ParticipantIdentifierType
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.withCharset
@@ -30,21 +30,29 @@ import io.ktor.server.routing.RoutingHandler
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import org.slf4j.LoggerFactory
-import tools.jackson.dataformat.xml.XmlMapper
-import tools.jackson.module.kotlin.readValue
 
 private val logger = LoggerFactory.getLogger(ManageBusinessIdentifier::class.java)!!
 
 fun Application.configureBusinessIdentifier() {
     val getHandler: RoutingHandler = {
-        val wsdlRequested = call.request.queryParameters.contains("wsdl")
+        val wsdlRequested =
+            call.request.queryParameters
+                .contains("wsdl")
         if (wsdlRequested) {
             val resource =
-                this::class.java.classLoader.getResourceAsStream("wsdl/peppol-sml-manage-business-identifier-service-v1.wsdl")
+                this::class.java.classLoader
+                    .getResourceAsStream("wsdl/peppol-sml-manage-business-identifier-service-v1.wsdl")
             if (resource != null) {
                 val content = resource.readBytes()
-                call.respondBytes(content, ContentType.Text.Xml.withCharset(Charsets.UTF_8), HttpStatusCode.OK)
+                call.respondBytes(
+                    content,
+                    ContentType.Text.Xml
+                        .withCharset(Charsets.UTF_8),
+                    HttpStatusCode.OK,
+                )
             } else {
                 call.respond(HttpStatusCode.NotFound)
             }
@@ -54,7 +62,9 @@ fun Application.configureBusinessIdentifier() {
     }
     val postHandler: RoutingHandler = {
         val raw = call.receiveText()
-        val soapAction = call.request.header("SOAPAction")
+        val soapAction =
+            call.request
+                .header("SOAPAction")
         val responseXml = dispatchManageBusinessIdentifier(raw, soapAction)
 
         call.respondText(
@@ -65,7 +75,8 @@ fun Application.configureBusinessIdentifier() {
                     logger.error("Error processing request:", it)
                     wrapInSoapEnvelope(it.message ?: "unknown error")
                 },
-            ContentType.Text.Xml.withCharset(Charsets.UTF_8),
+            ContentType.Text.Xml
+                .withCharset(Charsets.UTF_8),
             if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest,
         )
     }
@@ -140,12 +151,6 @@ class ManageBusinessIdentifier(
     @Property("dns.domain") val domain: String,
 ) {
     private val log = LoggerFactory.getLogger(ManageBusinessIdentifier::class.java)!!
-    private val xmlMapper: XmlMapper =
-        XmlMapper
-            .builder()
-            .nameForTextElement("text")
-            .findAndAddModules()
-            .build()
 
     suspend fun listParticipants(requestXml: String) =
         runCatching {
@@ -156,15 +161,15 @@ class ManageBusinessIdentifier(
                         log.error("Unable to parse the body element")
                     }
             val opXml = nodeToString(opElement)
-            val req = xmlMapper.readValue<PageRequestPojo>(opXml)
+            val req = APPLICATION_XML.decodeFromString<PageRequestPojo>(opXml)
 
             log.info("Listing participant identifiers for publisher {}", req.serviceMetadataPublisherID)
 
-            xmlMapper.writeValueAsString(
+            APPLICATION_XML.encodeToString(
                 participantService
                     .listByPublisher(req.serviceMetadataPublisherID)
                     .map {
-                        ParticipantIdentifierPojo(it.scheme, it.identifier)
+                        ParticipantIdentifierType(it.scheme, it.identifier)
                     }.let {
                         PageResponsePojo(it)
                     },
@@ -180,7 +185,7 @@ class ManageBusinessIdentifier(
                         log.error("Unable to parse the body element")
                     }
             val opXml = nodeToString(opElement)
-            val req = xmlMapper.readValue<CreateParticipantIdentifierRequestPojo>(opXml)
+            val req = APPLICATION_XML.decodeFromString<CreateParticipantIdentifierRequestPojo>(opXml)
 
             val smp =
                 publisherService.get(req.serviceMetadataPublisherID)
@@ -219,7 +224,7 @@ class ManageBusinessIdentifier(
                         log.error("Unable to parse the body element")
                     }
             val opXml = nodeToString(opElement)
-            val req = xmlMapper.readValue<CreateListRequestPojo>(opXml)
+            val req = APPLICATION_XML.decodeFromString<CreateListRequestPojo>(opXml)
 
             val smp =
                 publisherService.get(req.serviceMetadataPublisherID)
@@ -229,7 +234,9 @@ class ManageBusinessIdentifier(
                         log.error("No publisher found for id {}", req.serviceMetadataPublisherID)
                     }
             log.info("Creating participant identifiers for publisher {}", req.serviceMetadataPublisherID)
-            if (req.participantIdentifier.isEmpty()) {
+            if (req.participantIdentifier
+                    .isEmpty()
+            ) {
                 throw FaultError(
                     "<BadRequestFault><FaultMessage>No items to create</FaultMessage></BadRequestFault>",
                 )
@@ -293,7 +300,7 @@ class ManageBusinessIdentifier(
                         log.error("Unable to parse the body element")
                     }
             val opXml = nodeToString(opElement)
-            val req = xmlMapper.readValue<DeleteParticipantIdentifierRequestPojo>(opXml)
+            val req = APPLICATION_XML.decodeFromString<DeleteParticipantIdentifierRequestPojo>(opXml)
 
             if (!publisherService.exists(req.serviceMetadataPublisherID)) {
                 throw (
@@ -330,7 +337,7 @@ class ManageBusinessIdentifier(
                         log.error("Unable to parse the body element")
                     }
             val opXml = nodeToString(opElement)
-            val req = xmlMapper.readValue<DeleteListRequestPojo>(opXml)
+            val req = APPLICATION_XML.decodeFromString<DeleteListRequestPojo>(opXml)
             if (!publisherService.exists(req.serviceMetadataPublisherID)) {
                 throw FaultError(
                     "<BadRequestFault><FaultMessage>Unknown ServiceMetadataPublisherID: ${req.serviceMetadataPublisherID}</FaultMessage></BadRequestFault>",
@@ -369,7 +376,7 @@ class ManageBusinessIdentifier(
             log.debug("Deserializing")
             val req =
                 runCatching {
-                    xmlMapper.readValue<PrepareMigrationRecordRequestPojo>(nodeToString(opElement))
+                    APPLICATION_XML.decodeFromString<MigrationRecordType>(nodeToString(opElement))
                 }.onFailure {
                     log.error("Deserialization failed", it)
                 }.getOrThrow()
@@ -404,7 +411,7 @@ class ManageBusinessIdentifier(
 
             val req =
                 runCatching {
-                    xmlMapper.readValue<CompleteMigrationRecordRequestPojo>(nodeToString(opElement))
+                    APPLICATION_XML.decodeFromString<CompleteMigrationRecordRequestPojo>(nodeToString(opElement))
                 }.onFailure {
                     log.error("Deserialization failed", it)
                 }.getOrThrow()

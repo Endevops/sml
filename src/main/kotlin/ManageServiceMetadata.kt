@@ -1,10 +1,10 @@
 package be.endevops
 
 import be.endevops.svc.PublisherService
-import be.endevops.xml.CreateServiceMetadataPublisherServiceRequestPojo
 import be.endevops.xml.CreateServiceMetadataPublisherServiceResponsePojo
+import be.endevops.xml.CreateServiceMetadataPublisherServiceType
 import be.endevops.xml.DeleteServiceMetadataPublisherServiceRequestPojo
-import be.endevops.xml.PublisherEndpointPojo
+import be.endevops.xml.PublisherEndpointType
 import be.endevops.xml.ReadServiceMetadataPublisherServiceRequestPojo
 import be.endevops.xml.ReadServiceMetadataPublisherServiceResponsePojo
 import be.endevops.xml.UpdateDeleteServiceResponsePojo
@@ -25,24 +25,32 @@ import io.ktor.server.routing.RoutingHandler
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import org.slf4j.LoggerFactory
-import tools.jackson.dataformat.xml.XmlMapper
-import tools.jackson.module.kotlin.readValue
-
 
 fun Application.configureManageServiceMetadata() {
+    val logger = LoggerFactory.getLogger(Application::class.java)!!
     val getHandler: RoutingHandler = {
         // Serve WSDL when '?wsdl' is present; otherwise return OK
-        val wsdlRequested = call.request.queryParameters.contains("wsdl")
+        val wsdlRequested =
+            call.request.queryParameters
+                .contains("wsdl")
         if (!wsdlRequested) {
             call.respond(HttpStatusCode.OK)
         } else {
-            val resource = this::class.java.classLoader.getResourceAsStream(
-                "wsdl/peppol-sml-manage-service-metadata-service-v1.wsdl",
-            )
+            val resource =
+                this::class.java.classLoader.getResourceAsStream(
+                    "wsdl/peppol-sml-manage-service-metadata-service-v1.wsdl",
+                )
             if (resource != null) {
                 val content = resource.readBytes()
-                call.respondBytes(content, ContentType.Text.Xml.withCharset(Charsets.UTF_8), HttpStatusCode.OK)
+                call.respondBytes(
+                    content,
+                    ContentType.Text.Xml
+                        .withCharset(Charsets.UTF_8),
+                    HttpStatusCode.OK,
+                )
             } else {
                 call.respond(HttpStatusCode.NotFound)
             }
@@ -51,16 +59,21 @@ fun Application.configureManageServiceMetadata() {
 
     val postHandler: RoutingHandler = {
         val raw = call.receiveText()
-        val soapAction = call.request.header("SOAPAction")
+        val soapAction =
+            call.request
+                .header("SOAPAction")
         val responseXml = dispatchManageServiceMetadata(raw, soapAction)
         call.respondText(
-            responseXml.map {
-                wrapInSoapEnvelope(it)
-            }.getOrElse {
-                wrapInSoapEnvelope(it.message!!)
-            },
-            ContentType.Text.Xml.withCharset(Charsets.UTF_8),
-            if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest
+            responseXml
+                .map {
+                    wrapInSoapEnvelope(it)
+                }.getOrElse {
+                    logger.error("Error processing request: {}", it.message, it.cause)
+                    wrapInSoapEnvelope(it.message!!)
+                },
+            ContentType.Text.Xml
+                .withCharset(Charsets.UTF_8),
+            if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest,
         )
     }
 
@@ -87,163 +100,181 @@ suspend fun Application.dispatchManageServiceMetadata(
     log.debug("Request XML preview: {}", requestXml)
 
     val manageServiceMetadata: ManageServiceMetadata by dependencies
-    val innerResponse = when (operation) {
-        "CreateServiceMetadataPublisherService", "CreateServiceMetadataPublisherServiceRequest", "CreateServiceMetadataPublisherServiceType", "Create" -> {
-            manageServiceMetadata.createParticipant(requestXml)
-        }
+    val innerResponse =
+        when (operation) {
+            "CreateServiceMetadataPublisherService", "CreateServiceMetadataPublisherServiceRequest", "CreateServiceMetadataPublisherServiceType", "Create" -> {
+                manageServiceMetadata.createParticipant(requestXml)
+            }
 
-        "ReadServiceMetadataPublisherService", "Read" -> {
-            manageServiceMetadata.handleRead(requestXml)
-        }
+            "ReadServiceMetadataPublisherService", "Read" -> {
+                manageServiceMetadata.handleRead(requestXml)
+            }
 
-        "UpdateServiceMetadataPublisherService", "Update" -> {
-            manageServiceMetadata.handleUpdate(requestXml)
-        }
+            "UpdateServiceMetadataPublisherService", "Update" -> {
+                manageServiceMetadata.handleUpdate(requestXml)
+            }
 
-        "DeleteServiceMetadataPublisherService", "Delete" -> {
-            manageServiceMetadata.handleDelete(requestXml)
-        }
+            "DeleteServiceMetadataPublisherService", "Delete" -> {
+                manageServiceMetadata.handleDelete(requestXml)
+            }
 
-        else -> {
-            manageServiceMetadata.handleUnknown(operation)
+            else -> {
+                manageServiceMetadata.handleUnknown(operation)
+            }
         }
-    }
 
     return innerResponse
 }
 
-class ManageServiceMetadata(val publisherService: PublisherService) {
+class ManageServiceMetadata(
+    val publisherService: PublisherService,
+) {
     private val log = LoggerFactory.getLogger(ManageServiceMetadata::class.java)!!
-    private val xmlMapper: XmlMapper = XmlMapper.builder().nameForTextElement("text").findAndAddModules().build()
 
-    suspend fun createParticipant(requestXml: String) = runCatching {
-        log.debug("createParticipant: entry, requestPreview={}", requestXml)
+    suspend fun createParticipant(requestXml: String) =
+        runCatching {
+            log.debug("createParticipant: entry, requestPreview={}", requestXml)
 
-        val opElement = firstElementInSoapBody(requestXml) ?: throw FaultError(
-            xmlMapper.writeValueAsString(
-                CreateServiceMetadataPublisherServiceResponsePojo(
-                    result = "Error", faultMessage = "missing body element"
-                ).also {
-                    log.debug("createParticipant: missing body element")
-                })
-        )
-
-        val opXml = nodeToString(opElement)
-        log.debug("createParticipant: opXmlPreview={}", opXml)
-
-        // Strictly rely on POJO binding
-        val createPojo = xmlMapper.readValue<CreateServiceMetadataPublisherServiceRequestPojo>(opXml)
-        val model = PublisherService.ServiceMetadataPublisher(
-            publisherId = createPojo.serviceMetadataPublisherID,
-            logicalAddress = createPojo.publisherEndpoint.logicalAddress,
-            physicalAddress = createPojo.publisherEndpoint.physicalAddress,
-        )
-
-        log.info(
-            "createParticipant: creating model publisherId='{}' logical='{}' physical='{}'",
-            model.publisherId,
-            model.logicalAddress,
-            model.physicalAddress,
-        )
-        val createdId = publisherService.create(model)
-
-        val respPojo = CreateServiceMetadataPublisherServiceResponsePojo(result = "OK", databaseId = createdId)
-        xmlMapper.writeValueAsString(respPojo)
-    }
-
-    suspend fun handleRead(requestXml: String) = runCatching {
-        log.debug("handleRead: entry, requestPreview={}", requestXml)
-
-        val opElement = firstElementInSoapBody(requestXml) ?: run {
-            throw FaultError(
-                xmlMapper.writeValueAsString(
-                    ReadServiceMetadataPublisherServiceResponsePojo(
-                        result = "Error", faultMessage = "missing body element"
-                    )
+            val opElement =
+                firstElementInSoapBody(requestXml) ?: throw FaultError(
+                    APPLICATION_XML.encodeToString(
+                        CreateServiceMetadataPublisherServiceResponsePojo(
+                            result = "Error",
+                            faultMessage = "missing body element",
+                        ).also {
+                            log.debug("createParticipant: missing body element")
+                        },
+                    ),
                 )
+
+            val opXml = nodeToString(opElement)
+            log.debug("createParticipant: opXmlPreview={}", opXml)
+
+            // Strictly rely on POJO binding
+            val createPojo = APPLICATION_XML.decodeFromString<CreateServiceMetadataPublisherServiceType>(opXml)
+            val model =
+                PublisherService.ServiceMetadataPublisher(
+                    publisherId = createPojo.serviceMetadataPublisherID,
+                    logicalAddress = createPojo.publisherEndpoint.logicalAddress,
+                    physicalAddress = createPojo.publisherEndpoint.physicalAddress,
+                )
+
+            log.info(
+                "createParticipant: creating model publisherId='{}' logical='{}' physical='{}'",
+                model.publisherId,
+                model.logicalAddress,
+                model.physicalAddress,
+            )
+            val createdId = publisherService.create(model)
+
+            val respPojo = CreateServiceMetadataPublisherServiceResponsePojo(result = "OK", databaseId = createdId)
+            APPLICATION_XML.encodeToString(respPojo)
+        }
+
+    suspend fun handleRead(requestXml: String) =
+        runCatching {
+            log.debug("handleRead: entry, requestPreview={}", requestXml)
+
+            val opElement =
+                firstElementInSoapBody(requestXml) ?: run {
+                    throw FaultError(
+                        APPLICATION_XML.encodeToString(
+                            ReadServiceMetadataPublisherServiceResponsePojo(
+                                result = "Error",
+                                faultMessage = "missing body element",
+                            ),
+                        ),
+                    )
+                }
+
+            val opXml = nodeToString(opElement)
+            log.debug("handleRead: opXmlPreview={}", opXml)
+
+            // Strictly use POJO binding
+            val readPojo = APPLICATION_XML.decodeFromString<ReadServiceMetadataPublisherServiceRequestPojo>(opXml)
+
+            log.info("handleRead: reading serviceMetadataPublisherID='{}'", readPojo.serviceMetadataPublisherID)
+            val found =
+                publisherService.get(readPojo.serviceMetadataPublisherID) ?: throw FaultError(
+                    APPLICATION_XML.encodeToString(
+                        ReadServiceMetadataPublisherServiceResponsePojo(
+                            result = "NOT_FOUND",
+                            faultMessage = "Publisher not found",
+                        ),
+                    ),
+                )
+
+            APPLICATION_XML.encodeToString(
+                ReadServiceMetadataPublisherServiceResponsePojo(
+                    result = "OK",
+                    serviceMetadataPublisherID = found.publisherId,
+                    publisherEndpoint = PublisherEndpointType(found.logicalAddress, found.physicalAddress),
+                ),
             )
         }
 
-        val opXml = nodeToString(opElement)
-        log.debug("handleRead: opXmlPreview={}", opXml)
+    suspend fun handleUpdate(requestXml: String) =
+        runCatching {
+            log.debug("handleUpdate: entry, requestPreview={}", requestXml)
 
-        // Strictly use POJO binding
-        val readPojo = xmlMapper.readValue<ReadServiceMetadataPublisherServiceRequestPojo>(opXml)
-
-        log.info("handleRead: reading serviceMetadataPublisherID='{}'", readPojo.serviceMetadataPublisherID)
-        val found = publisherService.get(readPojo.serviceMetadataPublisherID) ?: throw FaultError(
-            xmlMapper.writeValueAsString(
-                ReadServiceMetadataPublisherServiceResponsePojo(
-                    result = "NOT_FOUND",
-                    faultMessage = "Publisher not found"
+            val opElement =
+                firstElementInSoapBody(requestXml) ?: throw FaultError(
+                    APPLICATION_XML.encodeToString(
+                        UpdateServiceMetadataPublisherServiceResponsePojo(
+                            result = "Error",
+                            faultMessage = "missing body element",
+                        ),
+                    ),
                 )
-            )
-        )
 
-        xmlMapper.writeValueAsString(
-            ReadServiceMetadataPublisherServiceResponsePojo(
-                result = "OK",
-                serviceMetadataPublisherID = found.publisherId,
-                publisherEndpoint = PublisherEndpointPojo(found.logicalAddress, found.physicalAddress),
-            )
-        )
-    }
+            val opXml = nodeToString(opElement)
+            log.debug("handleUpdate: opXmlPreview={}", opXml)
 
-    suspend fun handleUpdate(requestXml: String) = runCatching {
-        log.debug("handleUpdate: entry, requestPreview={}", requestXml)
+            val updatePojo = APPLICATION_XML.decodeFromString<UpdateServiceMetadataPublisherServiceRequestPojo>(opXml)
 
-        val opElement = firstElementInSoapBody(requestXml) ?: throw FaultError(
-            xmlMapper.writeValueAsString(
-                UpdateServiceMetadataPublisherServiceResponsePojo(
-                    result = "Error", faultMessage = "missing body element"
+            val model =
+                PublisherService.ServiceMetadataPublisher(
+                    updatePojo.serviceMetadataPublisherID,
+                    updatePojo.publisherEndpoint.logicalAddress,
+                    updatePojo.publisherEndpoint.physicalAddress,
                 )
-            )
-        )
 
+            publisherService.update(model)
+            APPLICATION_XML.encodeToString(UpdateServiceMetadataPublisherServiceResponsePojo(result = "OK"))
+        }
 
-        val opXml = nodeToString(opElement)
-        log.debug("handleUpdate: opXmlPreview={}", opXml)
+    suspend fun handleDelete(requestXml: String) =
+        runCatching {
+            log.debug("handleDelete: entry, requestPreview={}", requestXml)
 
-        val updatePojo = xmlMapper.readValue(opXml, UpdateServiceMetadataPublisherServiceRequestPojo::class.java)
-
-        val model = PublisherService.ServiceMetadataPublisher(
-            updatePojo.serviceMetadataPublisherID,
-            updatePojo.publisherEndpoint.logicalAddress,
-            updatePojo.publisherEndpoint.physicalAddress
-        )
-
-        publisherService.update(model)
-        xmlMapper.writeValueAsString(UpdateServiceMetadataPublisherServiceResponsePojo(result = "OK"))
-    }
-
-    suspend fun handleDelete(requestXml: String) = runCatching {
-        log.debug("handleDelete: entry, requestPreview={}", requestXml)
-
-        val opElement = firstElementInSoapBody(requestXml) ?: throw FaultError(
-            xmlMapper.writeValueAsString(
-                UpdateDeleteServiceResponsePojo(
-                    result = "Error", faultMessage = "missing body element"
+            val opElement =
+                firstElementInSoapBody(requestXml) ?: throw FaultError(
+                    APPLICATION_XML.encodeToString(
+                        UpdateDeleteServiceResponsePojo(
+                            result = "Error",
+                            faultMessage = "missing body element",
+                        ),
+                    ),
                 )
+
+            val opXml = nodeToString(opElement)
+            log.debug("handleDelete: opXmlPreview={}", opXml)
+
+            val deletePojo = APPLICATION_XML.decodeFromString<DeleteServiceMetadataPublisherServiceRequestPojo>(opXml)
+            publisherService.deleteByPublisherId(deletePojo.serviceMetadataPublisherID)
+
+            APPLICATION_XML.encodeToString(UpdateDeleteServiceResponsePojo(result = "OK"))
+        }
+
+    fun handleUnknown(operation: String?) =
+        runCatching {
+            val op = operation ?: "Unknown"
+            log.debug("handleUnknown: operation='{}'", op)
+            APPLICATION_XML.encodeToString(
+                CreateServiceMetadataPublisherServiceResponsePojo(
+                    result = "Error",
+                    faultMessage = "Unsupported operation: $op",
+                ),
             )
-        )
-
-        val opXml = nodeToString(opElement)
-        log.debug("handleDelete: opXmlPreview={}", opXml)
-
-        val deletePojo = xmlMapper.readValue(opXml, DeleteServiceMetadataPublisherServiceRequestPojo::class.java)
-        publisherService.deleteByPublisherId(deletePojo.serviceMetadataPublisherID)
-
-        xmlMapper.writeValueAsString(UpdateDeleteServiceResponsePojo(result = "OK"))
-    }
-
-    fun handleUnknown(operation: String?) = runCatching {
-        val op = operation ?: "Unknown"
-        log.debug("handleUnknown: operation='{}'", op)
-        xmlMapper.writeValueAsString(
-            CreateServiceMetadataPublisherServiceResponsePojo(
-                result = "Error", faultMessage = "Unsupported operation: $op"
-            )
-        )
-    }
+        }
 }
-

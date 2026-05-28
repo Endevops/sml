@@ -1,8 +1,9 @@
 package be.endevops.xml
 
+import be.endevops.APPLICATION_XML
+import kotlinx.serialization.decodeFromString
 import org.intellij.lang.annotations.Language
-import tools.jackson.dataformat.xml.XmlMapper
-import tools.jackson.module.kotlin.readValue
+import javax.xml.namespace.QName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -18,12 +19,11 @@ class PrepareMigrationRecordRequestPojoTest {
 
     @Test
     fun testDeserialize() {
-        val pojo = XmlMapper.builder().nameForTextElement("text").findAndAddModules().build()
-            .readValue<PrepareMigrationRecordRequestPojo>(xml)
-        assertEquals(pojo.serviceMetadataPublisherID , "ENDEVOPS-LOCAL-SMP")
-        assertEquals(pojo.participantIdentifier.identifier , "9915:test")
-        assertEquals(pojo.participantIdentifier.scheme , "iso6523-actorid-upis")
-        assertEquals(pojo.migrationKey , "iK1^lB1@!UZwQA1Eod~wt1zR")
+        val pojo = APPLICATION_XML.decodeFromString<MigrationRecordType>(xml)
+        assertEquals(pojo.serviceMetadataPublisherID, "ENDEVOPS-LOCAL-SMP")
+        assertEquals(pojo.participantIdentifier.identifier, "9915:test")
+        assertEquals(pojo.participantIdentifier.scheme, "iso6523-actorid-upis")
+        assertEquals(pojo.migrationKey, "iK1^lB1@!UZwQA1Eod~wt1zR")
     }
 }
 
@@ -39,11 +39,10 @@ class CompleteMigrationRecordRequestPojoTest {
 
     @Test
     fun testDeserialize() {
-        val pojo = XmlMapper.builder().nameForTextElement("text").findAndAddModules().build()
-            .readValue<CompleteMigrationRecordRequestPojo>(xml)
-        assertEquals(pojo.migrationKey , "eN0{jB3{FpC(m+^zj=T%PW)C")
+        val pojo = APPLICATION_XML.decodeFromString<MigrationRecordType>(xml, QName(SERVICE_METADATA_LOCATOR_NS, "CompleteMigrationRecord"))
+        assertEquals(pojo.migrationKey, "eN0{jB3{FpC(m+^zj=T%PW)C")
         assertEquals(pojo.serviceMetadataPublisherID, "ENDEVOPS-LOCAL-SMP")
-        assertEquals(pojo.participantIdentifier.scheme , "iso6523-actorid-upis")
-        assertEquals(pojo.participantIdentifier.identifier , "9915:test")
+        assertEquals(pojo.participantIdentifier.scheme, "iso6523-actorid-upis")
+        assertEquals(pojo.participantIdentifier.identifier, "9915:test")
     }
 }

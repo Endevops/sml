@@ -10,6 +10,7 @@ class IdentifierEncoderTest {
         assertEquals("gfwifwefpmd4mlcqrkqhlvovcx4p7vldz7pir4zumq5vavpiwtua", naptrIdentifierEncode("9925:be0847183845"))
         assertEquals("eh5boavaktmbgzyh2a63dz4qov33fvp5nsdvqklucfraayoodw6a", naptrIdentifierEncode("9915:test"))
     }
+
     @Test
     fun cnameTests() {
         assertEquals("85008b8279e07ab0392da75fa55856a2", cnameIdentifierEncode("9915:test"))

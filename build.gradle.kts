@@ -55,14 +55,12 @@ dependencies {
     implementation("io.ktor:ktor-server-netty")
     implementation("io.ktor:ktor-server-di")
     implementation("io.ktor:ktor-server-html-builder")
+    implementation("io.ktor:ktor-server-status-pages")
     implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
     implementation("org.xerial:sqlite-jdbc:$sqlite_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("dnsjava:dnsjava:3.6.3")
-
-    implementation("tools.jackson.dataformat:jackson-dataformat-xml:3.0.3")
-    implementation("tools.jackson.module:jackson-module-kotlin:3.0.3")
+    implementation("dnsjava:dnsjava:3.6.5")
 
     implementation("io.github.pdvrieze.xmlutil:serialization:1.0.0-rc2")
     implementation("io.github.pdvrieze.xmlutil:serialization-io:1.0.0-rc2")

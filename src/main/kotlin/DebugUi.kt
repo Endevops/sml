@@ -135,22 +135,30 @@ code {
                                     tr {
                                         td { +"GET" }
                                         td { code { +"/manageservicemetadata, /manage-service-metadata" } }
-                                        td { +"Serve WSDL when ?wsdl is present; otherwise returns 200 OK. Manage Service Metadata SOAP endpoint (create/read/update/delete publishers)." }
+                                        td {
+                                            +"Serve WSDL when ?wsdl is present; otherwise returns 200 OK. Manage Service Metadata SOAP endpoint (create/read/update/delete publishers)."
+                                        }
                                     }
                                     tr {
                                         td { +"POST" }
                                         td { code { +"/manageservicemetadata, /manage-service-metadata" } }
-                                        td { +"SOAP endpoint for Manage Service Metadata operations; accepts SOAP envelopes and returns XML responses." }
+                                        td {
+                                            +"SOAP endpoint for Manage Service Metadata operations; accepts SOAP envelopes and returns XML responses."
+                                        }
                                     }
                                     tr {
                                         td { +"GET" }
                                         td { code { +"/manageparticipantidentifier, /manage-business-identifier" } }
-                                        td { +"Serve WSDL when ?wsdl is present; otherwise returns 200 OK. Manage Business Identifier service (participant operations)." }
+                                        td {
+                                            +"Serve WSDL when ?wsdl is present; otherwise returns 200 OK. Manage Business Identifier service (participant operations)."
+                                        }
                                     }
                                     tr {
                                         td { +"POST" }
                                         td { code { +"/manageparticipantidentifier, /manage-business-identifier" } }
-                                        td { +"SOAP endpoint for Manage Business Identifier operations: create/delete/list/batch/prepare/migrate participant identifiers." }
+                                        td {
+                                            +"SOAP endpoint for Manage Business Identifier operations: create/delete/list/batch/prepare/migrate participant identifiers."
+                                        }
                                     }
                                 }
                             }

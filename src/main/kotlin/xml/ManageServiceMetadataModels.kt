@@ -1,38 +1,38 @@
 package be.endevops.xml
 
 import kotlinx.serialization.Serializable
+import nl.adaptivity.xmlutil.serialization.XmlAfter
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
 
-// POJOs for Manage Service Metadata SOAP operations using Jackson XML annotations.
-// Field localNames match the XML element names used in the existing SerializationModels and tests.
-
 @Serializable
-@XmlSerialName(value = "PublisherEndpoint")
-data class PublisherEndpointPojo(
-    @XmlSerialName(value = "LogicalAddress")
+@XmlSerialName(value = "PublisherEndpoint", namespace = SERVICE_METADATA_LOCATOR_NS)
+data class PublisherEndpointType(
+    @XmlSerialName(value = "LogicalAddress", namespace = SERVICE_METADATA_LOCATOR_NS)
     @XmlElement(value = true)
     val logicalAddress: String,
-    @XmlSerialName(value = "PhysicalAddress")
+    @XmlAfter("logicalAddress")
+    @XmlSerialName(value = "PhysicalAddress", namespace = SERVICE_METADATA_LOCATOR_NS)
     @XmlElement(value = true)
     val physicalAddress: String,
 )
 
 // Create request
 @Serializable
-@XmlSerialName(value = "CreateServiceMetadataPublisherService")
-data class CreateServiceMetadataPublisherServiceRequestPojo(
-    @XmlSerialName(value = "PublisherEndpoint")
+@XmlSerialName(value = "CreateServiceMetadataPublisherService", namespace = SERVICE_METADATA_LOCATOR_NS)
+data class CreateServiceMetadataPublisherServiceType(
+    @XmlSerialName(value = "PublisherEndpoint", namespace = SERVICE_METADATA_LOCATOR_NS)
     @XmlElement(value = true)
-    val publisherEndpoint: PublisherEndpointPojo,
-    @XmlSerialName(value = "ServiceMetadataPublisherID")
+    val publisherEndpoint: PublisherEndpointType,
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = SERVICE_METADATA_LOCATOR_NS)
     @XmlElement(value = true)
+    @XmlAfter("publisherEndpoint")
     val serviceMetadataPublisherID: String,
 )
 
 // Create response
 @Serializable
-@XmlSerialName(value = "CreateServiceMetadataPublisherServiceResponse")
+@XmlSerialName(value = "CreateServiceMetadataPublisherServiceResponse", namespace = SERVICE_METADATA_LOCATOR_NS)
 data class CreateServiceMetadataPublisherServiceResponsePojo(
     @XmlSerialName(value = "Result")
     @XmlElement(value = true)
@@ -47,26 +47,26 @@ data class CreateServiceMetadataPublisherServiceResponsePojo(
 
 // Read request
 @Serializable
-@XmlSerialName(value = "ReadServiceMetadataPublisherService")
+@XmlSerialName(value = "ReadServiceMetadataPublisherService", namespace = SERVICE_METADATA_LOCATOR_NS)
 data class ReadServiceMetadataPublisherServiceRequestPojo(
-    @XmlSerialName(value = "ServiceMetadataPublisherID")
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = SERVICE_METADATA_LOCATOR_NS)
     @XmlElement(value = true)
     val serviceMetadataPublisherID: String,
 )
 
 // Read response
 @Serializable
-@XmlSerialName(value = "ReadServiceMetadataPublisherServiceResponse")
+@XmlSerialName(value = "ReadServiceMetadataPublisherServiceResponse", namespace = SERVICE_METADATA_LOCATOR_NS)
 data class ReadServiceMetadataPublisherServiceResponsePojo(
     @XmlSerialName(value = "Result")
     @XmlElement(value = true)
     val result: String? = null,
-    @XmlSerialName(value = "ServiceMetadataPublisherID")
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = SERVICE_METADATA_LOCATOR_NS)
     @XmlElement(value = true)
     val serviceMetadataPublisherID: String? = null,
-    @XmlSerialName(value = "PublisherEndpoint")
+    @XmlSerialName(value = "PublisherEndpoint", namespace = SERVICE_METADATA_LOCATOR_NS)
     @XmlElement(value = true)
-    val publisherEndpoint: PublisherEndpointPojo? = null,
+    val publisherEndpoint: PublisherEndpointType? = null,
     @XmlSerialName(value = "FaultMessage")
     @XmlElement(value = true)
     val faultMessage: String? = null,
@@ -74,19 +74,19 @@ data class ReadServiceMetadataPublisherServiceResponsePojo(
 
 // Update request (same structure as Create)
 @Serializable
-@XmlSerialName(value = "UpdateServiceMetadataPublisherService")
+@XmlSerialName(value = "UpdateServiceMetadataPublisherService", namespace = SERVICE_METADATA_LOCATOR_NS)
 data class UpdateServiceMetadataPublisherServiceRequestPojo(
     @XmlSerialName(value = "PublisherEndpoint")
     @XmlElement(value = true)
-    val publisherEndpoint: PublisherEndpointPojo,
+    val publisherEndpoint: PublisherEndpointType,
     @XmlElement(value = true)
-    @XmlSerialName(value = "ServiceMetadataPublisherID")
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = SERVICE_METADATA_LOCATOR_NS)
     val serviceMetadataPublisherID: String,
 )
 
 // Update response
 @Serializable
-@XmlSerialName(value = "UpdateServiceMetadataPublisherServiceResponse")
+@XmlSerialName(value = "UpdateServiceMetadataPublisherServiceResponse", namespace = SERVICE_METADATA_LOCATOR_NS)
 data class UpdateServiceMetadataPublisherServiceResponsePojo(
     @XmlSerialName(value = "Result")
     @XmlElement(value = true)
@@ -98,16 +98,16 @@ data class UpdateServiceMetadataPublisherServiceResponsePojo(
 
 // Delete request (same as Read request shape)
 @Serializable
-@XmlSerialName(value = "DeleteServiceMetadataPublisherService")
+@XmlSerialName(value = "DeleteServiceMetadataPublisherService", namespace = SERVICE_METADATA_LOCATOR_NS)
 data class DeleteServiceMetadataPublisherServiceRequestPojo(
-    @XmlSerialName(value = "ServiceMetadataPublisherID")
+    @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = SERVICE_METADATA_LOCATOR_NS)
     @XmlElement(value = true)
     val serviceMetadataPublisherID: String,
 )
 
 // Shared Update/Delete response type
 @Serializable
-@XmlSerialName(value = "UpdateDeleteServiceResponse")
+@XmlSerialName(value = "UpdateDeleteServiceResponse", namespace = SERVICE_METADATA_LOCATOR_NS)
 data class UpdateDeleteServiceResponsePojo(
     @XmlSerialName(value = "Result")
     @XmlElement(value = true)

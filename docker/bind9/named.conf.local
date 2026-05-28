@@ -10,4 +10,11 @@ zone "europa.eu" {
     journal "/var/cache/bind/europa.eu.zone.jnl";
     allow-update { key update-key; };
 };
+
+zone "peppol.org." {
+    type master;
+    file "/etc/bind/peppol.org.zone";
+    journal "/var/cache/bind/peppol.org.zone.jnl";
+    allow-update { key update-key; };
+};
 // vim: set filetype=named:

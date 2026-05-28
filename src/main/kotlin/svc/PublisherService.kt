@@ -36,22 +36,23 @@ class PublisherService(
         val physicalAddress: String,
     )
 
-    suspend fun create(p: ServiceMetadataPublisher): Int = suspendTransaction(database) {
-        // return existing id if publisher_id already present
-        val existing =
-            Publishers
-                .selectAll()
-                .where { Publishers.publisherId eq p.publisherId }
-                .map { it[Publishers.id] }
-                .singleOrNull()
-        if (existing != null) return@suspendTransaction existing
+    suspend fun create(p: ServiceMetadataPublisher): Int =
+        suspendTransaction(database) {
+            // return existing id if publisher_id already present
+            val existing =
+                Publishers
+                    .selectAll()
+                    .where { Publishers.publisherId eq p.publisherId }
+                    .map { it[Publishers.id] }
+                    .singleOrNull()
+            if (existing != null) return@suspendTransaction existing
 
-        Publishers.insert {
-            it[publisherId] = p.publisherId
-            it[logicalAddress] = p.logicalAddress
-            it[physicalAddress] = p.physicalAddress
-        }[Publishers.id]
-    }
+            Publishers.insert {
+                it[publisherId] = p.publisherId
+                it[logicalAddress] = p.logicalAddress
+                it[physicalAddress] = p.physicalAddress
+            }[Publishers.id]
+        }
 
     suspend fun get(publisherIdStr: String): ServiceMetadataPublisher? =
         suspendTransaction(database) {

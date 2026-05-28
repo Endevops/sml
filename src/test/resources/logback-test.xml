@@ -1,13 +1,15 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%gray([%date{HH:mm:ss.SSS}]) %highlight(%-5level) %cyan(%logger{35}) %msg %n%xException{10}</pattern>
+            <pattern>%highlight(%-5level) %logger{35} -%kvp- %msg %n</pattern>
         </encoder>
     </appender>
+
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
-    <logger name="be.endevops" level="DEBUG"/>
+
+    <logger name="be.endevops" level="TRACE"/>
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
 </configuration>

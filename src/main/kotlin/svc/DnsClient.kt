@@ -13,7 +13,9 @@ data class DnsConfiguration(
     @Property("dns.keysecret") val keysecret: String,
 )
 
-class DnsClient(internal val dnsConfiguration: DnsConfiguration) {
+class DnsClient(
+    internal val dnsConfiguration: DnsConfiguration,
+) {
     companion object {
         private val logger = LoggerFactory.getLogger(DnsClient::class.java)!!
     }
@@ -42,8 +44,12 @@ class DnsClient(internal val dnsConfiguration: DnsConfiguration) {
         sendUpdate(update)
     }
 
-    private fun cNAMERecord(name: String, zone: String, ttl: Long, canonicalName: String): CNAMERecord =
-        CNAMERecord(fqdn(name, zone), DClass.IN, ttl, Name.fromString(canonicalName, Name.root))
+    private fun cNAMERecord(
+        name: String,
+        zone: String,
+        ttl: Long,
+        canonicalName: String,
+    ): CNAMERecord = CNAMERecord(fqdn(name, zone), DClass.IN, ttl, Name.fromString(canonicalName, Name.root))
 
     fun addNaptrRecord(
         zone: String,
@@ -73,7 +79,6 @@ class DnsClient(internal val dnsConfiguration: DnsConfiguration) {
         )
         sendUpdate(update)
     }
-
 
     fun updateNaptrRecord(
         zone: String,
@@ -113,18 +118,19 @@ class DnsClient(internal val dnsConfiguration: DnsConfiguration) {
         flags: String,
         service: String,
         regexp: String,
-        replacement: String
-    ): NAPTRRecord = NAPTRRecord(
-        fqdn(name, zone),
-        DClass.IN,
-        ttl,
-        order,
-        preference,
-        flags,
-        service,
-        regexp,
-        Name(replacement, Name.root),
-    )
+        replacement: String,
+    ): NAPTRRecord =
+        NAPTRRecord(
+            fqdn(name, zone),
+            DClass.IN,
+            ttl,
+            order,
+            preference,
+            flags,
+            service,
+            regexp,
+            Name(replacement, Name.root),
+        )
 
     fun deleteCNameRecord(
         zone: String,
@@ -170,10 +176,14 @@ class DnsClient(internal val dnsConfiguration: DnsConfiguration) {
     }
 }
 
-class BindException(message: String) : RuntimeException(message)
+class BindException(
+    message: String,
+) : RuntimeException(message)
 
-
-private fun fqdn(name: String, zone: String): Name {
+private fun fqdn(
+    name: String,
+    zone: String,
+): Name {
     val fq = if (name.endsWith(zone)) name else "$name.$zone"
     return Name.fromString(fq, Name.root)
 }

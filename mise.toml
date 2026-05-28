@@ -1,10 +1,16 @@
 [tools]
-gradle = "8"
-java = "21"
+gradle = "9"
+java = "25"
+ktlint = "latest"
 
 [env]
-"BIND_UPDATE_KEY" = { value = "dGhpcy1pc19qdXN0LXRlc3Qtc2VjcmV0LXN0cmluZw==", redact = true }
+BIND_UPDATE_KEY = { value = "dGhpcy1pc19qdXN0LXRlc3Qtc2VjcmV0LXN0cmluZw==", redact = true }
+SML_DNS_KEY_NAME = "update-key"
+SML_DNS_KEY_SECRET = { value = "dGhpcy1pc19qdXN0LXRlc3Qtc2VjcmV0LXN0cmluZw==", redact = true }
 
 [tasks.build-docker]
 description = "Build the docker image"
 run = "docker build . -t theyoxy/sml:develop"
+
+[shell_alias]
+gradle = "./gradlew"

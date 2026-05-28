@@ -8,7 +8,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 class FaultError(
     @Language("xml")
-    message: String
+    message: String,
 ) : Throwable(message)
 
 fun firstElementInSoapBody(xml: String): Element? {
@@ -67,7 +67,9 @@ fun extractOperationFromSoapAction(soapAction: String?): String? {
 }
 
 fun nodeToString(node: Element): String {
-    val sw = java.io.StringWriter()
+    val sw =
+        java.io
+            .StringWriter()
     val transformer =
         javax.xml.transform.TransformerFactory
             .newInstance()
@@ -85,18 +87,20 @@ fun nodeToString(node: Element): String {
 
 fun wrapInSoapEnvelope(innerXml: String): String =
     "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-            "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-            "  <soap:Body>\n" +
-            indentXml(innerXml) + "\n" +
-            "  </soap:Body>\n" +
-            "</soap:Envelope>"
+        "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+        "  <soap:Body>\n" +
+        indentXml(innerXml) + "\n" +
+        "  </soap:Body>\n" +
+        "</soap:Envelope>"
 
 fun indentXml(
     xml: String,
     spaces: Int = 4,
 ): String {
     val pad = " ".repeat(spaces)
-    return xml.lines().joinToString("\n") { if (it.isBlank()) it else pad + it }
+    return xml
+        .lines()
+        .joinToString("\n") { if (it.isBlank()) it else pad + it }
 }
 
 fun escapeXml(s: String): String =

@@ -1,0 +1,20 @@
+$TTL 0
+@   IN SOA  my-ns.peppol.org. my-root.peppol.org. (
+        2025122901 ; serial
+        1         ; refresh
+        1        ; retry
+        1         ; expire
+        1 )       ; minimum
+
+    IN NS   my-ns.peppol.org.
+my-ns  IN A    172.20.0.11
+my-root IN A    172.20.0.11
+; CNAME wildcard pointing to smp.docker.localhost
+; B-1ab40966bdc42f1831c6244a3941c906.iso6523-actorid-upis.acc.edelivery.tech.ec   IN CNAME   smp.docker.localhost.
+; NAPTR records copied from dnsmasq (converted to BIND format)
+; format: name TTL IN NAPTR order pref flags service regexp replacement
+; gfwifwefpmd4mlcqrkqhlvovcx4p7vldz7pir4zumq5vavpiwtua.iso6523-actorid-upis.acc.edelivery.tech.ec IN NAPTR 20 10 "U" "Meta:SMP" "!^.*$!http://smp.docker.localhost!" .
+; 3pwzocityrpoa5fqqp4zu4alikjex7zyzx7amdhwvvrtjaqakuba.iso6523-actorid-upis.acc.edelivery.tech.ec IN NAPTR 20 10 "U" "Meta:SMP" "!^.*$!http://smp.docker.localhost!" .
+; example from production
+; gfwifwefpmd4mlcqrkqhlvovcx4p7vldz7pir4zumq5vavpiwtua.iso6523-actorid-upis.edelivery.tech.ec.europa.eu. 60 IN NAPTR 100 10 "U" "Meta:SMP" "!.*!http://smp.storecove.com!" .
+

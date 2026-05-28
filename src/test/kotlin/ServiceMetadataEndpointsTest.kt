@@ -1,9 +1,13 @@
 package be.endevops
 
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.server.testing.*
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.server.testing.testApplication
+import org.intellij.lang.annotations.Language
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -12,8 +16,10 @@ class ServiceMetadataEndpointsTest {
     @Test
     fun testCreateServiceMetadataPublisher() =
         testApplication {
+            configure()
             application { testModule() }
 
+            @Language("xml")
             val soapRequest =
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -48,8 +54,10 @@ class ServiceMetadataEndpointsTest {
     @Test
     fun testCreateIdempotent() =
         testApplication {
+            configure()
             application { testModule() }
 
+            @Language("xml")
             val soapRequest =
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -73,7 +81,10 @@ class ServiceMetadataEndpointsTest {
                 }
             val b1 = r1.bodyAsText()
             assertTrue(Regex("<DatabaseId>(\\d+)</DatabaseId>").find(b1) != null)
-            val id1 = Regex("<DatabaseId>(\\d+)</DatabaseId>").find(b1)!!.groupValues[1]
+            val id1 =
+                Regex("<DatabaseId>(\\d+)</DatabaseId>")
+                    .find(b1)!!
+                    .groupValues[1]
 
             val r2 =
                 client.post("/manage-service-metadata") {
@@ -81,7 +92,10 @@ class ServiceMetadataEndpointsTest {
                     setBody(soapRequest)
                 }
             val b2 = r2.bodyAsText()
-            val id2 = Regex("<DatabaseId>(\\d+)</DatabaseId>").find(b2)!!.groupValues[1]
+            val id2 =
+                Regex("<DatabaseId>(\\d+)</DatabaseId>")
+                    .find(b2)!!
+                    .groupValues[1]
 
             assertEquals(id1, id2, "Expected idempotent create to return same DatabaseId for same publisher id")
         }
@@ -89,8 +103,10 @@ class ServiceMetadataEndpointsTest {
     @Test
     fun testReadEndpointReturnsOk() =
         testApplication {
+            configure()
             application { testModule() }
 
+            @Language("xml")
             val soapRequest =
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -117,8 +133,10 @@ class ServiceMetadataEndpointsTest {
     @Test
     fun testUpdateEndpointReturnsOk() =
         testApplication {
+            configure()
             application { testModule() }
 
+            @Language("xml")
             val soapRequest =
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -149,8 +167,10 @@ class ServiceMetadataEndpointsTest {
     @Test
     fun testDeleteEndpointReturnsOk() =
         testApplication {
+            configure()
             application { testModule() }
 
+            @Language("xml")
             val soapRequest =
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -177,8 +197,10 @@ class ServiceMetadataEndpointsTest {
     @Test
     fun testCreateThenReadPersistence() =
         testApplication {
+            configure()
             application { testModule() }
 
+            @Language("xml")
             val create =
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -238,8 +260,10 @@ class ServiceMetadataEndpointsTest {
     @Test
     fun testCreateUpdateReadPersistence() =
         testApplication {
+            configure()
             application { testModule() }
 
+            @Language("xml")
             val create =
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -261,6 +285,7 @@ class ServiceMetadataEndpointsTest {
                 setBody(create)
             }
 
+            @Language("xml")
             val update =
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -284,6 +309,7 @@ class ServiceMetadataEndpointsTest {
                 }
             assertEquals(HttpStatusCode.OK, up.status)
 
+            @Language("xml")
             val read =
                 """
                 <?xml version="1.0" encoding="utf-8"?>
