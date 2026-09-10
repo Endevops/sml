@@ -101,7 +101,7 @@ class ServiceMetadataEndpointsTest {
         }
 
     @Test
-    fun testReadEndpointReturnsOk() =
+    fun testReadUnknownPublisherReturnsNotFound() =
         testApplication {
             configure()
             application { testModule() }
@@ -125,9 +125,11 @@ class ServiceMetadataEndpointsTest {
                     setBody(soapRequest)
                 }
 
-            assertEquals(HttpStatusCode.OK, response.status)
+            // The SML specification maps notFoundFault to HTTP 404 (ICD section 4.2.4).
+            assertEquals(HttpStatusCode.NotFound, response.status)
             val body = response.bodyAsText()
-            assertTrue(body.contains("<Result>OK</Result>"), "Expected Result OK in response, got: $body")
+            assertTrue(body.contains("<NotFoundFault"), "Expected NotFoundFault in response, got: $body")
+            assertTrue(body.contains("<FaultMessage>"), "Expected FaultMessage in response, got: $body")
         }
 
     @Test
@@ -135,6 +137,30 @@ class ServiceMetadataEndpointsTest {
         testApplication {
             configure()
             application { testModule() }
+
+            @Language("xml")
+            val create =
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://busdox.org/serviceMetadata/locator/1.0/">
+                  <soap:Body>
+                    <ns:CreateServiceMetadataPublisherService>
+                      <ns:PublisherEndpoint>
+                        <ns:LogicalAddress>http://persistence.test/logical</ns:LogicalAddress>
+                        <ns:PhysicalAddress>Persistence Publisher</ns:PhysicalAddress>
+                      </ns:PublisherEndpoint>
+                      <ns:ServiceMetadataPublisherID>test-pub-update</ns:ServiceMetadataPublisherID>
+                    </ns:CreateServiceMetadataPublisherService>
+                  </soap:Body>
+                </soap:Envelope>
+                """.trimIndent()
+            assertEquals(
+                HttpStatusCode.OK,
+                client.post("/manage-service-metadata") {
+                    contentType(ContentType.Text.Xml)
+                    setBody(create)
+                }.status,
+            )
 
             @Language("xml")
             val soapRequest =
@@ -169,6 +195,30 @@ class ServiceMetadataEndpointsTest {
         testApplication {
             configure()
             application { testModule() }
+
+            @Language("xml")
+            val create =
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://busdox.org/serviceMetadata/locator/1.0/">
+                  <soap:Body>
+                    <ns:CreateServiceMetadataPublisherService>
+                      <ns:PublisherEndpoint>
+                        <ns:LogicalAddress>http://persistence.test/logical</ns:LogicalAddress>
+                        <ns:PhysicalAddress>Persistence Publisher</ns:PhysicalAddress>
+                      </ns:PublisherEndpoint>
+                      <ns:ServiceMetadataPublisherID>test-pub-delete</ns:ServiceMetadataPublisherID>
+                    </ns:CreateServiceMetadataPublisherService>
+                  </soap:Body>
+                </soap:Envelope>
+                """.trimIndent()
+            assertEquals(
+                HttpStatusCode.OK,
+                client.post("/manage-service-metadata") {
+                    contentType(ContentType.Text.Xml)
+                    setBody(create)
+                }.status,
+            )
 
             @Language("xml")
             val soapRequest =

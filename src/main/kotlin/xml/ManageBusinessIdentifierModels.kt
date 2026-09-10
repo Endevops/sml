@@ -88,11 +88,71 @@ data class MigrationRecordType(
 @XmlSerialName(value = "CompleteMigrationRecord", namespace = SERVICE_METADATA_LOCATOR_NS)
 data class CompleteMigrationRecordRequestPojo(
     @XmlElement(value = true)
-    @XmlSerialName(value = "MigrationKey", namespace = IDENTIFIER_NS)
-    val migrationKey: String,
-    @XmlElement(value = true)
     @XmlSerialName(value = "ServiceMetadataPublisherID", namespace = SERVICE_METADATA_LOCATOR_NS)
     val serviceMetadataPublisherID: String,
     @XmlSerialName(value = "ParticipantIdentifier", namespace = IDENTIFIER_NS)
     val participantIdentifier: ParticipantIdentifierType,
+    @XmlElement(value = true)
+    @XmlSerialName(value = "MigrationKey", namespace = SERVICE_METADATA_LOCATOR_NS)
+    val migrationKey: String,
+)
+
+@Serializable
+@XmlSerialName(value = "CreateParticipantIdentifierResponse", namespace = SERVICE_METADATA_LOCATOR_NS)
+data class CreateParticipantIdentifierResponsePojo(
+    @XmlSerialName(value = "Result")
+    @XmlElement(value = true)
+    val result: String? = null,
+    @XmlSerialName(value = "DatabaseId")
+    @XmlElement(value = true)
+    val databaseId: Int? = null,
+)
+
+@Serializable
+@XmlSerialName(value = "DeleteParticipantIdentifierResponse", namespace = SERVICE_METADATA_LOCATOR_NS)
+data class DeleteParticipantIdentifierResponsePojo(
+    @XmlSerialName(value = "Result")
+    @XmlElement(value = true)
+    val result: String? = null,
+)
+
+@Serializable
+@XmlSerialName(value = "CreateListResponse", namespace = SERVICE_METADATA_LOCATOR_NS)
+data class CreateListResponsePojo(
+    @XmlSerialName(value = "Result")
+    @XmlElement(value = true)
+    val result: String? = null,
+    @XmlSerialName(value = "Created")
+    @XmlElement(value = true)
+    val created: Int? = null,
+)
+
+@Serializable
+@XmlSerialName(value = "DeleteListResponse", namespace = SERVICE_METADATA_LOCATOR_NS)
+data class DeleteListResponsePojo(
+    @XmlSerialName(value = "Result")
+    @XmlElement(value = true)
+    val result: String? = null,
+    @XmlSerialName(value = "Deleted")
+    @XmlElement(value = true)
+    val deleted: Int? = null,
+)
+
+@Serializable
+@XmlSerialName(value = "PrepareMigrationRecordResponse", namespace = SERVICE_METADATA_LOCATOR_NS)
+data class PrepareMigrationRecordResponsePojo(
+    @XmlSerialName(value = "Result")
+    @XmlElement(value = true)
+    val result: String? = null,
+    @XmlSerialName(value = "MigrationKey")
+    @XmlElement(value = true)
+    val migrationKey: String? = null,
+)
+
+@Serializable
+@XmlSerialName(value = "CompleteMigrationRecordResponse", namespace = SERVICE_METADATA_LOCATOR_NS)
+data class CompleteMigrationRecordResponsePojo(
+    @XmlSerialName(value = "Result")
+    @XmlElement(value = true)
+    val result: String? = null,
 )

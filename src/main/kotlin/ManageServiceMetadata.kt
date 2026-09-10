@@ -7,12 +7,9 @@ import be.endevops.xml.DeleteServiceMetadataPublisherServiceRequestPojo
 import be.endevops.xml.PublisherEndpointType
 import be.endevops.xml.ReadServiceMetadataPublisherServiceRequestPojo
 import be.endevops.xml.ReadServiceMetadataPublisherServiceResponsePojo
-import be.endevops.xml.Soap11Body
-import be.endevops.xml.Soap11Envelope
 import be.endevops.xml.UpdateDeleteServiceResponsePojo
 import be.endevops.xml.UpdateServiceMetadataPublisherServiceRequestPojo
 import be.endevops.xml.UpdateServiceMetadataPublisherServiceResponsePojo
-import be.endevops.xml.toCompactFragment
 import be.endevops.xml.toPlatformDocument
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -29,7 +26,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import nl.adaptivity.xmlutil.dom.PlatformDocument
 import org.slf4j.LoggerFactory
 
@@ -66,17 +62,8 @@ fun Application.configureManageServiceMetadata() {
         val soapAction =
             call.request
                 .header("SOAPAction")
-        val responseXml = dispatchManageServiceMetadata(raw, soapAction)
-        call.respond(
-            if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest,
-            responseXml
-                .map {
-                    Soap11Envelope(body = Soap11Body(any = listOf(it.toCompactFragment())))
-                }.getOrElse {
-                    logger.error("Error processing request: {}", it.message, it.cause)
-                    wrapInSoapEnvelope(it.message!!)
-                },
-        )
+        val response = dispatchManageServiceMetadata(raw, soapAction).toSoapResponse(logger)
+        call.respond(response.status, response.envelope)
     }
 
     routing {
@@ -135,16 +122,9 @@ class ManageServiceMetadata(
             log.debug("createParticipant: entry, requestPreview={}", requestXml)
 
             val opElement =
-                firstElementInSoapBody(requestXml) ?: throw FaultError(
-                    APPLICATION_XML.encodeToString(
-                        CreateServiceMetadataPublisherServiceResponsePojo(
-                            result = "Error",
-                            faultMessage = "missing body element",
-                        ).also {
-                            log.debug("createParticipant: missing body element")
-                        },
-                    ),
-                )
+                firstElementInSoapBody(requestXml) ?: throw badRequestFault("missing body element").also {
+                    log.debug("createParticipant: missing body element")
+                }
 
             val opXml = nodeToString(opElement)
             log.debug("createParticipant: opXmlPreview={}", opXml)
@@ -176,16 +156,7 @@ class ManageServiceMetadata(
             log.debug("handleRead: entry, requestPreview={}", requestXml)
 
             val opElement =
-                firstElementInSoapBody(requestXml) ?: run {
-                    throw FaultError(
-                        APPLICATION_XML.encodeToString(
-                            ReadServiceMetadataPublisherServiceResponsePojo(
-                                result = "Error",
-                                faultMessage = "missing body element",
-                            ),
-                        ),
-                    )
-                }
+                firstElementInSoapBody(requestXml) ?: throw badRequestFault("missing body element")
 
             val opXml = nodeToString(opElement)
             log.debug("handleRead: opXmlPreview={}", opXml)
@@ -195,13 +166,8 @@ class ManageServiceMetadata(
 
             log.info("handleRead: reading serviceMetadataPublisherID='{}'", readPojo.serviceMetadataPublisherID)
             val found =
-                publisherService.get(readPojo.serviceMetadataPublisherID) ?: throw FaultError(
-                    APPLICATION_XML.encodeToString(
-                        ReadServiceMetadataPublisherServiceResponsePojo(
-                            result = "NOT_FOUND",
-                            faultMessage = "Publisher not found",
-                        ),
-                    ),
+                publisherService.get(readPojo.serviceMetadataPublisherID) ?: throw notFoundFault(
+                    "Unknown ServiceMetadataPublisherID: ${readPojo.serviceMetadataPublisherID}",
                 )
 
             APPLICATION_XML.toPlatformDocument(
@@ -218,14 +184,7 @@ class ManageServiceMetadata(
             log.debug("handleUpdate: entry, requestPreview={}", requestXml)
 
             val opElement =
-                firstElementInSoapBody(requestXml) ?: throw FaultError(
-                    APPLICATION_XML.encodeToString(
-                        UpdateServiceMetadataPublisherServiceResponsePojo(
-                            result = "Error",
-                            faultMessage = "missing body element",
-                        ),
-                    ),
-                )
+                firstElementInSoapBody(requestXml) ?: throw badRequestFault("missing body element")
 
             val opXml = nodeToString(opElement)
             log.debug("handleUpdate: opXmlPreview={}", opXml)
@@ -239,7 +198,9 @@ class ManageServiceMetadata(
                     updatePojo.publisherEndpoint.physicalAddress,
                 )
 
-            publisherService.update(model)
+            if (!publisherService.update(model)) {
+                throw notFoundFault("Unknown ServiceMetadataPublisherID: ${updatePojo.serviceMetadataPublisherID}")
+            }
             APPLICATION_XML.toPlatformDocument(
                 UpdateServiceMetadataPublisherServiceResponsePojo(result = "OK"),
             )
@@ -250,20 +211,15 @@ class ManageServiceMetadata(
             log.debug("handleDelete: entry, requestPreview={}", requestXml)
 
             val opElement =
-                firstElementInSoapBody(requestXml) ?: throw FaultError(
-                    APPLICATION_XML.encodeToString(
-                        UpdateDeleteServiceResponsePojo(
-                            result = "Error",
-                            faultMessage = "missing body element",
-                        ),
-                    ),
-                )
+                firstElementInSoapBody(requestXml) ?: throw badRequestFault("missing body element")
 
             val opXml = nodeToString(opElement)
             log.debug("handleDelete: opXmlPreview={}", opXml)
 
             val deletePojo = APPLICATION_XML.decodeFromString<DeleteServiceMetadataPublisherServiceRequestPojo>(opXml)
-            publisherService.deleteByPublisherId(deletePojo.serviceMetadataPublisherID)
+            if (!publisherService.deleteByPublisherId(deletePojo.serviceMetadataPublisherID)) {
+                throw notFoundFault("Unknown ServiceMetadataPublisherID: ${deletePojo.serviceMetadataPublisherID}")
+            }
 
             APPLICATION_XML.toPlatformDocument(
                 UpdateDeleteServiceResponsePojo(result = "OK"),

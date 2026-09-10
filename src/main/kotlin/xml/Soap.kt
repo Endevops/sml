@@ -4,7 +4,6 @@ import kotlinx.serialization.Serializable
 import nl.adaptivity.xmlutil.SerializableQName
 import nl.adaptivity.xmlutil.serialization.XmlAfter
 import nl.adaptivity.xmlutil.serialization.XmlBefore
-import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlOtherAttributes
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
 import nl.adaptivity.xmlutil.serialization.XmlValue
@@ -16,7 +15,7 @@ const val SOAP11_PREFIX = "S11"
 @Serializable
 @XmlSerialName(value = "Body", namespace = SOAP11_NS, prefix = SOAP11_PREFIX)
 data class Soap11Body(
-    @XmlElement
+    @XmlValue
     val any: List<CompactFragment> = emptyList(),
     @XmlOtherAttributes
     val otherAttributes: Map<SerializableQName, String> = emptyMap(),

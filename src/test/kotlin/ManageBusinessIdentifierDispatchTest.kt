@@ -113,9 +113,7 @@ class ManageBusinessIdentifierDispatchTest {
                   <soap:Body>
                     <ns:DeleteParticipantIdentifier>
                       <ns:ServiceMetadataPublisherID>$serviceId</ns:ServiceMetadataPublisherID>
-                      <ids:ParticipantIdentifier scheme="iso6523-actorid-upis">
-                         12345
-                      </ids:ParticipantIdentifier>
+                      <ids:ParticipantIdentifier scheme="iso6523-actorid-upis">12345</ids:ParticipantIdentifier>
                     </ns:DeleteParticipantIdentifier>
                   </soap:Body>
                 </soap:Envelope>
@@ -141,7 +139,7 @@ class ManageBusinessIdentifierDispatchTest {
             assertEquals(HttpStatusCode.OK, listResp2.status)
             val listBody2 = listResp2.body<String>()
             assertTrue(
-                !listBody2.contains("<identifier>12345</identifier>"),
+                !listBody2.contains(">12345<"),
                 "Expected identifier removed after delete, got: $listBody2",
             )
         }
@@ -151,6 +149,36 @@ class ManageBusinessIdentifierDispatchTest {
         testApplication {
             configure()
             application { testModule() }
+
+            @Language("xml")
+            val createPublisherTemplate =
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://busdox.org/serviceMetadata/locator/1.0/">
+                  <soap:Body>
+                    <ns:CreateServiceMetadataPublisherService>
+                      <ns:PublisherEndpoint>
+                        <ns:LogicalAddress>http://example.org/PUBLISHER_ID</ns:LogicalAddress>
+                        <ns:PhysicalAddress>PUBLISHER_ID</ns:PhysicalAddress>
+                      </ns:PublisherEndpoint>
+                      <ns:ServiceMetadataPublisherID>PUBLISHER_ID</ns:ServiceMetadataPublisherID>
+                    </ns:CreateServiceMetadataPublisherService>
+                  </soap:Body>
+                </soap:Envelope>
+                """.trimIndent()
+
+            fun createPublisher(id: String): String = createPublisherTemplate.replace("PUBLISHER_ID", id)
+
+            for (id in listOf("bulk-pub", "target-pub")) {
+                assertEquals(
+                    HttpStatusCode.OK,
+                    client.post("/manage-service-metadata") {
+                        contentType(ContentType.Text.Xml)
+                        setBody(createPublisher(id))
+                    }.status,
+                    "Expected publisher $id to be created",
+                )
+            }
 
             @Language("xml")
             val createListReq =
@@ -195,8 +223,8 @@ class ManageBusinessIdentifierDispatchTest {
                     setBody(listReq)
                 }
             val listBody = listResp.body<String>()
-            assertTrue(listBody.contains("<identifier>A1</identifier>"), "Expected A1 in list; got: $listBody")
-            assertTrue(listBody.contains("<identifier>A2</identifier>"), "Expected A2 in list; got: $listBody")
+            assertTrue(listBody.contains(">A1<"), "Expected A1 in list; got: $listBody")
+            assertTrue(listBody.contains(">A2<"), "Expected A2 in list; got: $listBody")
 
             @Language("xml")
             val prepareReq =
@@ -225,9 +253,11 @@ class ManageBusinessIdentifierDispatchTest {
             val migrateReq =
                 """
                 <?xml version="1.0" encoding="utf-8"?>
-                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://busdox.org/serviceMetadata/locator/1.0/">
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://busdox.org/serviceMetadata/locator/1.0/" xmlns:ids="http://busdox.org/transport/identifiers/1.0/">
                   <soap:Body>
                     <ns:CompleteMigrationRecord>
+                      <ns:ServiceMetadataPublisherID>target-pub</ns:ServiceMetadataPublisherID>
+                      <ids:ParticipantIdentifier scheme="iso6523-actorid-upis">A1</ids:ParticipantIdentifier>
                       <ns:MigrationKey>migrate-A1</ns:MigrationKey>
                     </ns:CompleteMigrationRecord>
                   </soap:Body>
@@ -249,7 +279,7 @@ class ManageBusinessIdentifierDispatchTest {
                         setBody(listReq)
                     }.body<String>()
             assertTrue(
-                !listBulk.contains("<identifier>A1</identifier>"),
+                !listBulk.contains(">A1<"),
                 "Expected A1 removed from source; got: $listBulk",
             )
 
@@ -273,7 +303,7 @@ class ManageBusinessIdentifierDispatchTest {
                         setBody(listReqTarget)
                     }.body<String>()
             assertTrue(
-                listTarget.contains("<identifier>A1</identifier>"),
+                listTarget.contains(">A1<"),
                 "Expected A1 present under target; got: $listTarget",
             )
         }
