@@ -1,6 +1,6 @@
 [tools]
 gradle = "9"
-java = "25"
+java = "26"
 ktlint = "latest"
 
 [env]

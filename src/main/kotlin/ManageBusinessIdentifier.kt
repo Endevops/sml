@@ -93,53 +93,47 @@ suspend fun Application.dispatchManageBusinessIdentifier(
     requestXml: String,
     soapActionHeader: String?,
 ): Result<String> {
-    log.trace(
-        "dispatchManageBusinessIdentifier called: soapAction='{}' requestLength={}",
-        soapActionHeader,
-        requestXml.length,
-    )
+    log.trace("dispatchManageBusinessIdentifier called: soapAction='{}' requestLength={}", soapActionHeader, requestXml.length)
     val operation = extractOperationNameFromSoap(requestXml) ?: extractOperationFromSoapAction(soapActionHeader)
     log.info("Determined operation='{}'", operation)
     log.debug("Request XML preview: {}", requestXml)
 
     val mbi: ManageBusinessIdentifier by dependencies
-    val inner =
-        when (operation) {
-            "CreateParticipantIdentifier", "Create" -> {
-                mbi.createParticipant(requestXml)
-            }
 
-            "DeleteParticipantIdentifier", "Delete" -> {
-                mbi.deleteParticipant(requestXml)
-            }
-
-            "List", "ParticipantIdentifierPage", "PageRequest", "PageRequestType" -> {
-                mbi.listParticipants(requestXml)
-            }
-
-            "CreateList", "CreateListIn", "CreateListType" -> {
-                mbi.createListParticipants(requestXml)
-            }
-
-            "DeleteList", "DeleteListIn", "DeleteListType" -> {
-                mbi.deleteParticipantList(requestXml)
-            }
-
-            "PrepareToMigrate", "PrepareMigrationRecord", "PrepareMigrationRecordType" -> {
-                mbi.prepareToMigrate(requestXml)
-            }
-
-            "Migrate", "CompleteMigrationRecord", "CompleteMigrationRecordType" -> {
-                mbi.migrate(requestXml)
-            }
-
-            else -> {
-                log.warn("Unknown operation='{}'", operation)
-                Result.failure(FaultError("<BadRequestFault><FaultMessage>Unknown operation: $operation</FaultMessage></BadRequestFault>"))
-            }
+    return when (operation) {
+        "CreateParticipantIdentifier", "Create" -> {
+            mbi.createParticipant(requestXml)
         }
 
-    return inner
+        "DeleteParticipantIdentifier", "Delete" -> {
+            mbi.deleteParticipant(requestXml)
+        }
+
+        "List", "ParticipantIdentifierPage", "PageRequest", "PageRequestType" -> {
+            mbi.listParticipants(requestXml)
+        }
+
+        "CreateList", "CreateListIn", "CreateListType" -> {
+            mbi.createListParticipants(requestXml)
+        }
+
+        "DeleteList", "DeleteListIn", "DeleteListType" -> {
+            mbi.deleteParticipantList(requestXml)
+        }
+
+        "PrepareToMigrate", "PrepareMigrationRecord", "PrepareMigrationRecordType" -> {
+            mbi.prepareToMigrate(requestXml)
+        }
+
+        "Migrate", "CompleteMigrationRecord", "CompleteMigrationRecordType" -> {
+            mbi.migrate(requestXml)
+        }
+
+        else -> {
+            log.warn("Unknown operation='{}'", operation)
+            Result.failure(FaultError("<BadRequestFault><FaultMessage>Unknown operation: $operation</FaultMessage></BadRequestFault>"))
+        }
+    }
 }
 
 class ManageBusinessIdentifier(
@@ -147,8 +141,10 @@ class ManageBusinessIdentifier(
     val dnsClient: DnsClient,
     val publisherService: PublisherService,
     val migrationService: MigrationService,
-    @Property("dns.zone") val zone: String,
-    @Property("dns.domain") val domain: String,
+    @Property("dns.zone")
+    val zone: String,
+    @Property("dns.domain")
+    val domain: String,
 ) {
     private val log = LoggerFactory.getLogger(ManageBusinessIdentifier::class.java)!!
 

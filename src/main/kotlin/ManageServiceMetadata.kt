@@ -7,9 +7,13 @@ import be.endevops.xml.DeleteServiceMetadataPublisherServiceRequestPojo
 import be.endevops.xml.PublisherEndpointType
 import be.endevops.xml.ReadServiceMetadataPublisherServiceRequestPojo
 import be.endevops.xml.ReadServiceMetadataPublisherServiceResponsePojo
+import be.endevops.xml.Soap11Body
+import be.endevops.xml.Soap11Envelope
 import be.endevops.xml.UpdateDeleteServiceResponsePojo
 import be.endevops.xml.UpdateServiceMetadataPublisherServiceRequestPojo
 import be.endevops.xml.UpdateServiceMetadataPublisherServiceResponsePojo
+import be.endevops.xml.toCompactFragment
+import be.endevops.xml.toPlatformDocument
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.withCharset
@@ -20,13 +24,13 @@ import io.ktor.server.request.header
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
-import io.ktor.server.response.respondText
 import io.ktor.server.routing.RoutingHandler
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import nl.adaptivity.xmlutil.dom.PlatformDocument
 import org.slf4j.LoggerFactory
 
 fun Application.configureManageServiceMetadata() {
@@ -63,17 +67,15 @@ fun Application.configureManageServiceMetadata() {
             call.request
                 .header("SOAPAction")
         val responseXml = dispatchManageServiceMetadata(raw, soapAction)
-        call.respondText(
+        call.respond(
+            if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest,
             responseXml
                 .map {
-                    wrapInSoapEnvelope(it)
+                    Soap11Envelope(body = Soap11Body(any = listOf(it.toCompactFragment())))
                 }.getOrElse {
                     logger.error("Error processing request: {}", it.message, it.cause)
                     wrapInSoapEnvelope(it.message!!)
                 },
-            ContentType.Text.Xml
-                .withCharset(Charsets.UTF_8),
-            if (responseXml.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest,
         )
     }
 
@@ -89,7 +91,7 @@ fun Application.configureManageServiceMetadata() {
 suspend fun Application.dispatchManageServiceMetadata(
     requestXml: String,
     soapActionHeader: String?,
-): Result<String> {
+): Result<PlatformDocument> {
     log.trace(
         "dispatchManageServiceMetadata called: soapActionHeader='{}', requestLength={}",
         soapActionHeader,
@@ -100,30 +102,27 @@ suspend fun Application.dispatchManageServiceMetadata(
     log.debug("Request XML preview: {}", requestXml)
 
     val manageServiceMetadata: ManageServiceMetadata by dependencies
-    val innerResponse =
-        when (operation) {
-            "CreateServiceMetadataPublisherService", "CreateServiceMetadataPublisherServiceRequest", "CreateServiceMetadataPublisherServiceType", "Create" -> {
-                manageServiceMetadata.createParticipant(requestXml)
-            }
-
-            "ReadServiceMetadataPublisherService", "Read" -> {
-                manageServiceMetadata.handleRead(requestXml)
-            }
-
-            "UpdateServiceMetadataPublisherService", "Update" -> {
-                manageServiceMetadata.handleUpdate(requestXml)
-            }
-
-            "DeleteServiceMetadataPublisherService", "Delete" -> {
-                manageServiceMetadata.handleDelete(requestXml)
-            }
-
-            else -> {
-                manageServiceMetadata.handleUnknown(operation)
-            }
+    return when (operation) {
+        "CreateServiceMetadataPublisherService", "CreateServiceMetadataPublisherServiceRequest", "CreateServiceMetadataPublisherServiceType", "Create" -> {
+            manageServiceMetadata.createParticipant(requestXml)
         }
 
-    return innerResponse
+        "ReadServiceMetadataPublisherService", "Read" -> {
+            manageServiceMetadata.handleRead(requestXml)
+        }
+
+        "UpdateServiceMetadataPublisherService", "Update" -> {
+            manageServiceMetadata.handleUpdate(requestXml)
+        }
+
+        "DeleteServiceMetadataPublisherService", "Delete" -> {
+            manageServiceMetadata.handleDelete(requestXml)
+        }
+
+        else -> {
+            manageServiceMetadata.handleUnknown(operation)
+        }
+    }
 }
 
 class ManageServiceMetadata(
@@ -167,8 +166,9 @@ class ManageServiceMetadata(
             )
             val createdId = publisherService.create(model)
 
-            val respPojo = CreateServiceMetadataPublisherServiceResponsePojo(result = "OK", databaseId = createdId)
-            APPLICATION_XML.encodeToString(respPojo)
+            APPLICATION_XML.toPlatformDocument(
+                CreateServiceMetadataPublisherServiceResponsePojo(result = "OK", databaseId = createdId),
+            )
         }
 
     suspend fun handleRead(requestXml: String) =
@@ -204,7 +204,7 @@ class ManageServiceMetadata(
                     ),
                 )
 
-            APPLICATION_XML.encodeToString(
+            APPLICATION_XML.toPlatformDocument(
                 ReadServiceMetadataPublisherServiceResponsePojo(
                     result = "OK",
                     serviceMetadataPublisherID = found.publisherId,
@@ -240,7 +240,9 @@ class ManageServiceMetadata(
                 )
 
             publisherService.update(model)
-            APPLICATION_XML.encodeToString(UpdateServiceMetadataPublisherServiceResponsePojo(result = "OK"))
+            APPLICATION_XML.toPlatformDocument(
+                UpdateServiceMetadataPublisherServiceResponsePojo(result = "OK"),
+            )
         }
 
     suspend fun handleDelete(requestXml: String) =
@@ -263,14 +265,16 @@ class ManageServiceMetadata(
             val deletePojo = APPLICATION_XML.decodeFromString<DeleteServiceMetadataPublisherServiceRequestPojo>(opXml)
             publisherService.deleteByPublisherId(deletePojo.serviceMetadataPublisherID)
 
-            APPLICATION_XML.encodeToString(UpdateDeleteServiceResponsePojo(result = "OK"))
+            APPLICATION_XML.toPlatformDocument(
+                UpdateDeleteServiceResponsePojo(result = "OK"),
+            )
         }
 
     fun handleUnknown(operation: String?) =
         runCatching {
             val op = operation ?: "Unknown"
             log.debug("handleUnknown: operation='{}'", op)
-            APPLICATION_XML.encodeToString(
+            APPLICATION_XML.toPlatformDocument(
                 CreateServiceMetadataPublisherServiceResponsePojo(
                     result = "Error",
                     faultMessage = "Unsupported operation: $op",

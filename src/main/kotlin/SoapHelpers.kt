@@ -102,11 +102,3 @@ fun indentXml(
         .lines()
         .joinToString("\n") { if (it.isBlank()) it else pad + it }
 }
-
-fun escapeXml(s: String): String =
-    s
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
-        .replace("'", "&apos;")
