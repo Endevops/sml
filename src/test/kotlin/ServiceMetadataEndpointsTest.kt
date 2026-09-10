@@ -128,6 +128,10 @@ class ServiceMetadataEndpointsTest {
             // The SML specification maps notFoundFault to HTTP 404 (ICD section 4.2.4).
             assertEquals(HttpStatusCode.NotFound, response.status)
             val body = response.bodyAsText()
+            assertTrue(body.contains("<S11:Fault>"), "Expected SOAP Fault element in response, got: $body")
+            assertTrue(body.contains("<faultcode>S11:Server</faultcode>"), "Expected faultcode in response, got: $body")
+            assertTrue(body.contains("<faultstring>"), "Expected faultstring in response, got: $body")
+            assertTrue(body.contains("<detail>"), "Expected fault detail in response, got: $body")
             assertTrue(body.contains("<NotFoundFault"), "Expected NotFoundFault in response, got: $body")
             assertTrue(body.contains("<FaultMessage>"), "Expected FaultMessage in response, got: $body")
         }

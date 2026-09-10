@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import nl.adaptivity.xmlutil.SerializableQName
 import nl.adaptivity.xmlutil.serialization.XmlAfter
 import nl.adaptivity.xmlutil.serialization.XmlBefore
+import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlOtherAttributes
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
 import nl.adaptivity.xmlutil.serialization.XmlValue
@@ -22,7 +23,7 @@ data class Soap11Body(
 )
 
 @Serializable
-@XmlSerialName(value = "detail", namespace = SOAP11_NS, prefix = SOAP11_PREFIX)
+@XmlSerialName(value = "detail", namespace = "")
 data class Soap11Detail(
     @XmlValue
     val any: List<CompactFragment> = emptyList(),
@@ -44,17 +45,20 @@ data class Soap11Envelope(
 
 @Serializable
 @XmlSerialName(value = "Fault", namespace = SOAP11_NS, prefix = SOAP11_PREFIX)
-@Suppress("unused")
 data class Soap11Fault(
-    @XmlSerialName(value = "faultcode", namespace = SOAP11_NS, prefix = SOAP11_PREFIX)
+    @XmlSerialName(value = "faultcode", namespace = "")
+    @XmlElement(value = true)
     val faultcode: SerializableQName? = null,
-    @XmlSerialName(value = "faultstring", namespace = SOAP11_NS, prefix = SOAP11_PREFIX)
+    @XmlSerialName(value = "faultstring", namespace = "")
+    @XmlElement(value = true)
     @XmlAfter("faultcode")
     val faultstring: String? = null,
-    @XmlSerialName(value = "faultactor", namespace = SOAP11_NS, prefix = SOAP11_PREFIX)
+    @XmlSerialName(value = "faultactor", namespace = "")
+    @XmlElement(value = true)
     @XmlAfter("faultstring")
     val faultactor: String? = null,
-    @XmlSerialName(value = "detail", namespace = SOAP11_NS, prefix = SOAP11_PREFIX)
+    @XmlSerialName(value = "detail", namespace = "")
+    @XmlElement(value = true)
     @XmlAfter("faultactor")
     val detail: Soap11Detail? = null,
 )

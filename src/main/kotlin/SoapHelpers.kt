@@ -3,11 +3,16 @@ package be.endevops
 import be.endevops.xml.BadRequestFaultPojo
 import be.endevops.xml.InternalErrorFaultPojo
 import be.endevops.xml.NotFoundFaultPojo
+import be.endevops.xml.SOAP11_NS
+import be.endevops.xml.SOAP11_PREFIX
 import be.endevops.xml.Soap11Body
+import be.endevops.xml.Soap11Detail
 import be.endevops.xml.Soap11Envelope
+import be.endevops.xml.Soap11Fault
 import be.endevops.xml.toCompactFragment
 import be.endevops.xml.toPlatformDocument
 import io.ktor.http.HttpStatusCode
+import nl.adaptivity.xmlutil.SerializableQName
 import nl.adaptivity.xmlutil.dom.PlatformDocument
 import org.slf4j.Logger
 import org.w3c.dom.Element
@@ -50,6 +55,19 @@ fun internalErrorFault(message: String): FaultError =
         message = message,
     )
 
+/**
+ * Wraps the specific fault body in a SOAP 1.1 `<Fault>` as required by the SML specification
+ * samples (eDelivery SML Interface Control Document, section 4.2.4.3).
+ */
+private fun FaultError.toSoapFaultDocument(): PlatformDocument =
+    APPLICATION_XML.toPlatformDocument(
+        Soap11Fault(
+            faultcode = SerializableQName(SOAP11_NS, "Server", SOAP11_PREFIX),
+            faultstring = message,
+            detail = Soap11Detail(any = listOf(detail.toCompactFragment())),
+        ),
+    )
+
 /** The HTTP status and serializable body returned to the caller for a dispatch outcome. */
 data class SoapResponse(
     val status: HttpStatusCode,
@@ -75,7 +93,9 @@ fun Result<PlatformDocument>.toSoapResponse(logger: Logger): SoapResponse =
             val fault = cause as? FaultError ?: internalErrorFault(cause.message ?: "unknown error")
             SoapResponse(
                 status = fault.status,
-                envelope = Soap11Envelope(body = Soap11Body(any = listOf(fault.detail.toCompactFragment()))),
+                envelope = Soap11Envelope(
+                    body = Soap11Body(any = listOf(fault.toSoapFaultDocument().toCompactFragment())),
+                ),
             )
         },
     )
