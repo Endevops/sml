@@ -5,16 +5,27 @@ import be.endevops.svc.ParticipantService
 import be.endevops.svc.PublisherService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.log
 import io.ktor.server.html.respondHtml
 import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.request.receiveParameters
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.html.ButtonType
+import kotlinx.html.FormMethod
+import kotlinx.html.InputType
 import kotlinx.html.body
+import kotlinx.html.button
 import kotlinx.html.code
 import kotlinx.html.div
+import kotlinx.html.form
 import kotlinx.html.h1
 import kotlinx.html.h2
 import kotlinx.html.head
+import kotlinx.html.input
 import kotlinx.html.style
 import kotlinx.html.table
 import kotlinx.html.tbody
@@ -215,9 +226,9 @@ code {
                                     tr {
                                         th { +"Key" }
                                         th { +"From Publisher" }
-                                        th { +"To Publisher" }
                                         th { +"Scheme" }
                                         th { +"Identifier" }
+                                        th { +"Actions" }
                                     }
                                 }
                                 tbody {
@@ -227,6 +238,15 @@ code {
                                             td { +m.fromPublisher }
                                             td { +m.scheme }
                                             td { code { +m.identifier } }
+                                            td {
+                                                form(action = "/debug/migrations/delete", method = FormMethod.post) {
+                                                    input(type = InputType.hidden, name = "key") { value = m.key }
+                                                    input(type = InputType.hidden, name = "fromPublisher") {
+                                                        value = m.fromPublisher
+                                                    }
+                                                    button(type = ButtonType.submit) { +"Delete" }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -234,6 +254,26 @@ code {
                         }
                     }
                 }
+            }
+        }
+
+        post("/debug/migrations/delete") {
+            val migrationService: MigrationService by dependencies
+            val parameters = runCatching { call.receiveParameters() }.getOrNull()
+            val key = parameters?.get("key")
+            val fromPublisher = parameters?.get("fromPublisher")
+            if (key.isNullOrBlank() || fromPublisher.isNullOrBlank()) {
+                call.respond(HttpStatusCode.BadRequest)
+            } else {
+                val deleted =
+                    migrationService.deleteByKeyAndPublisher(key, fromPublisher)
+                call.application.log.debug(
+                    "Deleted {} migration record(s) for key '{}' and publisher '{}'",
+                    deleted,
+                    key,
+                    fromPublisher,
+                )
+                call.respondRedirect("/")
             }
         }
     }

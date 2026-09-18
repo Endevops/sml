@@ -1,6 +1,7 @@
 package be.endevops.svc
 
 import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
@@ -66,6 +67,28 @@ class MigrationService(
         suspendTransaction(database) {
             Migrations.deleteWhere {
                 Migrations.key eq key
+            }
+        }
+
+    suspend fun deleteByParticipant(
+        fromPublisher: String,
+        scheme: String,
+        identifier: String,
+    ): Int =
+        suspendTransaction(database) {
+            Migrations.deleteWhere {
+                (Migrations.fromPublisher eq fromPublisher) and (Migrations.scheme eq scheme) and
+                    (Migrations.identifier eq identifier)
+            }
+        }
+
+    suspend fun deleteByKeyAndPublisher(
+        key: String,
+        fromPublisher: String,
+    ): Int =
+        suspendTransaction(database) {
+            Migrations.deleteWhere {
+                (Migrations.key eq key) and (Migrations.fromPublisher eq fromPublisher)
             }
         }
 

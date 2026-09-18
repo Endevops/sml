@@ -310,6 +310,18 @@ class ManageBusinessIdentifier(
                     req.participantIdentifier.identifier,
                 )
             log.trace("handleDelete deleted={}", deleted)
+            val deletedMigrations =
+                migrationService.deleteByParticipant(
+                    req.serviceMetadataPublisherID,
+                    req.participantIdentifier.scheme,
+                    req.participantIdentifier.identifier,
+                )
+            log.debug(
+                "Deleted {} migration record(s) for participant {}:{}",
+                deletedMigrations,
+                req.participantIdentifier.scheme,
+                req.participantIdentifier.identifier,
+            )
             APPLICATION_XML.toPlatformDocument(
                 DeleteParticipantIdentifierResponsePojo(result = "OK"),
             )
@@ -345,6 +357,9 @@ class ManageBusinessIdentifier(
                 if (participantService.delete(req.serviceMetadataPublisherID, scheme, identifier)) {
                     deletedCount++
                 }
+                val deletedMigrations =
+                    migrationService.deleteByParticipant(req.serviceMetadataPublisherID, scheme, identifier)
+                log.debug("Deleted {} migration record(s) for participant {}:{}", deletedMigrations, scheme, identifier)
             }
 
             APPLICATION_XML.toPlatformDocument(
