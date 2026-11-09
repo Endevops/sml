@@ -16,8 +16,8 @@ Ktor/JVM POC of the PEPPOL Service Metadata Locator (SML). State lives in SQLite
 
 ## Toolchain
 
-- Always use the wrapper `./gradlew`. `mise.toml` pins Gradle 9 / Java 26 and aliases `gradle` -> `./gradlew`; Kotlin targets JVM toolchain 25.
-- Plugin versions are set in `build.gradle.kts` (Kotlin `2.4.0-RC`, Ktor plugin `3.5.0`). `kotlin_version` / `ktor_version` in `gradle.properties` only feed a couple of dependencies and can lag behind.
+- Always use the wrapper `./gradlew`. `mise.toml` pins Gradle 9 / Java 26 and aliases `gradle` -> `./gradlew`; Kotlin targets JVM toolchain 26.
+- Plugin versions are set in `build.gradle.kts` (Kotlin `2.4.21`, Ktor plugin `3.6.1`). `kotlin_version` / `ktor_version` in `gradle.properties` only feed a couple of dependencies and can lag behind.
 
 ## Test prerequisites (easy to miss)
 

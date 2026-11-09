@@ -25,7 +25,7 @@ inline fun <reified T : Any> XML.toPlatformDocument(value: T): PlatformDocument 
             .createDocument(null, null, null)
 
     return (
-        DomWriter(root).use {
+        DomWriter(root as PlatformNode).use {
             it.indentString = ""
             this.encodeToWriter(it, value)
             it.target

@@ -2,12 +2,13 @@
 
 # Build-time metadata
 ARG BUILDKIT_SBOM_SCAN_CONTEXT=true
-ARG JAVA_VERSION=25
+ARG JAVA_VERSION=26
+ARG BUILD_JAVA_VERSION=27
 
 # --------------------
 # Builder: compile application with Gradle
 # --------------------
-FROM --platform=$BUILDPLATFORM gradle:9-jdk${JAVA_VERSION} AS builder
+FROM --platform=$BUILDPLATFORM gradle:9-jdk${BUILD_JAVA_VERSION} AS builder
 ENV GRADLE_USER_HOME=/home/gradle/.gradle
 WORKDIR /gradle
 
@@ -37,7 +38,7 @@ RUN apk add --no-cache git && \
 # --------------------
 # Runtime: small, secure image
 # --------------------
-FROM --platform=$BUILDPLATFORM gcr.io/distroless/java${JAVA_VERSION}-debian13:nonroot AS runtime
+FROM --platform=$BUILDPLATFORM eclipse-temurin:${JAVA_VERSION}-jre AS runtime
 
 ENV DB_FILE=/app/data/data.db
 VOLUME /app/data
@@ -59,5 +60,6 @@ COPY --from=builder --chown=65532:65532 /gradle/data/ /app/data/
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/healthprobe", "/"]
 
 EXPOSE 8080
+USER 65532:65532
 
 ENTRYPOINT ["java", "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints",  "-Xms128m", "-Xmx1g", "-Xmx512m", "-jar", "/app/app.jar"]

@@ -31,7 +31,7 @@ import nl.adaptivity.xmlutil.qname
 import nl.adaptivity.xmlutil.util.impl.createDocument
 
 /** Implement forEach with a built-in cast to attr. */
-internal inline fun NamedNodeMap.forEachAttr(body: (Attr) -> Unit) {
+internal inline fun NamedNodeMap<Attr>.forEachAttr(body: (Attr) -> Unit) {
     val l = size
     for (idx in 0 until l) {
         body(item(idx) as Attr)
@@ -41,7 +41,7 @@ internal inline fun NamedNodeMap.forEachAttr(body: (Attr) -> Unit) {
 /** A filter function on a [NamedNodeMap] that returns a list of all
  * (attributes)[Attr] that meet the [predicate].
  */
-internal inline fun NamedNodeMap.filterTyped(predicate: (Attr) -> Boolean): List<Attr> {
+internal inline fun NamedNodeMap<Attr>.filterTyped(predicate: (Attr) -> Boolean): List<Attr> {
     val result = mutableListOf<Attr>()
     forEachAttr { attr ->
         if (predicate(attr)) result.add(attr)
@@ -227,7 +227,7 @@ class DomWriter(
      *   children (`false`)
      * @param xmlDeclMode Determine whether an XML declaration is written
      */
-    internal constructor(
+    constructor(
         current: PlatformNode,
         isAppend: Boolean = false,
         xmlDeclMode: XmlDeclMode = XmlDeclMode.IfRequired,
