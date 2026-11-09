@@ -1,8 +1,7 @@
-val exposed_version: String by project
-val h2_version: String by project
-val kotlin_version: String by project
-val logback_version: String by project
-val sqlite_version: String by project
+val exposed_version = property("exposed_version") as String
+val kotlin_version = property("kotlin_version") as String
+val logback_version = property("logback_version") as String
+val sqlite_version = property("sqlite_version") as String
 
 plugins {
     kotlin("jvm") version "2.4.21"
